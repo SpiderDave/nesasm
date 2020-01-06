@@ -25,7 +25,7 @@ RestoreBank:
     rts
         
 ; Bankswap routine
-; example uusage:
+; example usage:
 ;
 ;    lda #$01
 ;    jsr BankSwap

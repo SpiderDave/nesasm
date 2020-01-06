@@ -1,11 +1,11 @@
 messages_lo:
-    .db <message_main, <message_error
+    .db <message_main, <message_error, <version_date
 messages_hi:
-    .db >message_main, >message_error
+    .db >message_main, >message_error, >version_date
 
 message_main:
-    .db $20,$63,"NES MMC3 Thing",0
-    .db $20,$83,"v.1.0 by SpiderDave",0
+    .db $20,$63,"NES MMC3 Thing ",0
+    .db $20,$83,"by SpiderDave",0
     
     .db $21,$65,"Whatever you do, ",0
     .db $21,$85,"don't press A.",0
@@ -28,4 +28,9 @@ message_main:
 message_error:
     .db $21,$65,"                      ",0
     .db $21,$85, "WHAT HAVE YOU DONE?!!",0
+    .db $00
+version_date:
+    .db $2b, $43
+    .include data\version.asm
+    .db $00
     .db $00
