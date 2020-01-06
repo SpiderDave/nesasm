@@ -9,6 +9,8 @@ temp7: .dsb 1
 temp8: .dsb 1
 temp9: .dsb 1
 temp16: .dsb 2
+temp: .dsb 1
+
 
 buttons: .dsb 1
 buttonsPress: .dsb 1
@@ -16,3 +18,6 @@ buttonsPress: .dsb 1
 vblanked: .dsb 1
 
 current_song: .dsb 1
+
+seed: .dsb $02, $ff
+randomNumber: .dsb 1

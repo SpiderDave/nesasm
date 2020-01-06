@@ -4,8 +4,8 @@ messages_hi:
     .db >message_main, >message_error, >version_date
 
 message_main:
-    .db $20,$63,"NES MMC3 Thing ",0
-    .db $20,$83,"by SpiderDave",0
+    .db $20,$68,"NES MMC3 Thing ",0
+    .db $20,$88,"by SpiderDave",0
     
     .db $21,$65,"Whatever you do, ",0
     .db $21,$85,"don't press A.",0

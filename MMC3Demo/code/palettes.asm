@@ -3,7 +3,10 @@ loadPalette:
     
     lda #$3F
     sta PPUADDR
-    lda #$00
+    tya
+    asl
+    asl
+    ;lda #$00
     sta PPUADDR
     
     lda palettes_lo, x
@@ -32,6 +35,7 @@ palette00:
 palette01:
     .db $0F, $26, $16, $06
 palette02:
+    .db $0F, $33, $23, $03
 palette03:
 palette04:
 palette05:

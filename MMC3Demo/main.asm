@@ -41,6 +41,7 @@ include code\ggsound\ggsound.inc
 .include code\messages.asm
 
 .include code\sprites.asm
+.include code\rng.asm
 
 NMI:
     lda #$00
@@ -79,6 +80,10 @@ Reset:
     
 main:
     jsr removeAllSprites
+    inc seed             ; Initialize rng with seed $0001
+    
+    jsr createStars
+    
     
     lda #$00            ; load main display message
     jsr print
@@ -87,6 +92,7 @@ main:
     jsr print
     
     lda #$00            ; Use default palette
+    ldy #$00            ; palette slot 0
     jsr loadPalette
     
     lda #$02
@@ -120,7 +126,6 @@ main:
     jsr play_song
     
     jsr RestoreBank
-
     
 mainLoop:
     jsr waitframe
@@ -156,11 +161,15 @@ mainLoop:
     lda #$00                ; Enable sound engine updates
     sta sound_disable_update
     
+    lda #$42             ; Initialize rng with seed $4242
+    sta seed
+    sta seed+1
 buttonNotPressed:
+    jsr handleStars
+    
     ;bit PPUSTATUS
     lda #$00
     sta PPUSCROLL
-    lda #$00
     sta PPUSCROLL
     lda #$1a
     sta PPUMASK
@@ -180,9 +189,59 @@ showError:
     jsr print
 
     lda #$01            ; Use error palette
+    ldy #$00            ; palette slot 0
     jsr loadPalette
     
     rts
+
+handleStars:
+    ldy #$00
+-
+    lda spriteVelocityX,y
+    sta temp
+
+    lda SpriteX,y
+    sec
+    sbc temp
+    sta SpriteX,y
+    
+    lda temp
+    clc
+    adc #$02
+    sta SpriteTile,y
+    
+    iny
+    iny
+    iny
+    iny
+    bne -
+rts
+
+createStars:
+    lda #$02            ; Use palette 02
+    ldy #$04            ; palette slot 4
+    jsr loadPalette
+    
+    
+    ldy #$00
+-
+    jsr rng
+    sta SpriteX,y
+    jsr rng
+    sta SpriteY,y
+    lda #$20
+    sta SpriteAttributes,y
+    jsr rng
+    and #$03
+    sta spriteVelocityX,y
+    sta SpriteTile,y
+
+    iny
+    iny
+    iny
+    iny
+    bne -
+rts
 
 readJoy:
     .include code\joypad.asm
