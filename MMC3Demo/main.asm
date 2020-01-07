@@ -44,15 +44,29 @@ include code\ggsound\ggsound.inc
 .include code\rng.asm
 
 NMI:
-    lda #$00
-    sta vblanked
-    
     pha
     txa
     pha
     tya
     pha
-    php
+    
+    lda #$02
+    sta OAMDMA
+
+    lda #$00
+    sta vblanked
+    
+    jsr rng
+    and #$03
+    ldy #$00            ; palette slot 0
+    jsr loadPalette
+    
+    ;bit PPUSTATUS
+    lda #$00
+    sta PPUSCROLL
+    sta PPUSCROLL
+    ;lda #$1a
+    ;sta PPUMASK
     
     lda #$02
     jsr BankSwap
@@ -64,7 +78,6 @@ NMI:
     lda #$01
     sta vblanked
     
-    plp
     pla
     tay
     pla
@@ -83,6 +96,19 @@ main:
     inc seed             ; Initialize rng with seed $0001
     
     jsr createStars
+    
+    ;ship
+    ldy #$00
+    lda #$00
+    sta SpriteX,y
+    lda #$30
+    sta SpriteY,y
+    lda #$00
+    sta SpriteAttributes,y
+    lda #$02
+    sta spriteVelocityX,y
+    lda #$10
+    sta SpriteTile,y
     
     
     lda #$00            ; load main display message
@@ -131,6 +157,62 @@ mainLoop:
     jsr waitframe
     jsr readJoy
     
+    lda buttons
+    and #$08                ;up
+    cmp #$08
+    bne +
+    lda SpriteY
+    sec
+    sbc #$01
+    sta SpriteY
+    jmp ++
++
+    lda buttons
+    and #$04                ;down
+    cmp #$04
+    bne +
+    lda SpriteY
+    clc
+    adc #$01
+    sta SpriteY
+    jmp ++
++
+++
+    lda buttons
+    and #$02                ;left
+    cmp #$02
+    bne +
+    lda SpriteX
+    sec
+    sbc #$01
+    sta SpriteX
+    jmp ++
++
+    lda buttons
+    and #$01                ;right
+    cmp #$01
+    bne +
+    lda SpriteX
+    clc
+    adc #$01
+    sta SpriteX
+    jmp ++
++
+++
+    lda buttons
+    and #$40                ;B
+    cmp #$40
+    bne +
+    
+    ldy #$04
+    lda SpriteTile, y
+    cmp #$13
+    beq +
+    
+    jsr createLaser
+    jmp ++
++
+
     lda buttonsPress
     cmp #$80                ; Check if A pressed
     bne buttonNotPressed    ; branch if not
@@ -161,9 +243,7 @@ mainLoop:
     lda #$00                ; Enable sound engine updates
     sta sound_disable_update
     
-    lda #$42             ; Initialize rng with seed $4242
-    sta seed
-    sta seed+1
+++
 buttonNotPressed:
     jsr handleStars
     
@@ -178,13 +258,12 @@ buttonNotPressed:
     lda #$90
     sta PPUCTRL
     
-    lda #$02
-    sta OAMDMA
+;    lda #$02
+;    sta OAMDMA
     
     jmp mainLoop
     
 showError:
-    
     lda #$01            ; load error message
     jsr print
 
@@ -195,7 +274,7 @@ showError:
     rts
 
 handleStars:
-    ldy #$00
+    ldy #$10
 -
     lda spriteVelocityX,y
     sta temp
@@ -204,18 +283,83 @@ handleStars:
     sec
     sbc temp
     sta SpriteX,y
+    iny
+    iny
+    iny
+    iny
+    bne -
+
+    ; lasers
+    ldy #$04
+    ldx #$03
+-
+    lda #$f8
+    sta SpriteY,y
     
-    lda temp
+    lda SpriteTile,y
+    cmp #$12
+    beq ++
+    
+    lda spriteVelocityX,y
+    sta temp
+
+    lda SpriteX,y
     clc
-    adc #$02
+    adc temp
+    sta SpriteX,y
+    cmp #$f0
+    bcc +
+    
+    lda #$12
+    sta SpriteTile,y
++
+    
+    lda SpriteY
+    sta SpriteY,y
+++
+    iny
+    iny
+    iny
+    iny
+    
+    dex
+    bne -
+
+
+rts
+
+
+createLaser:
+    ldy #$04
+    ldx #$03
+-
+    txa
+    asl
+    asl
+    asl
+    clc
+    adc SpriteX
+    sec
+    sbc #$0f
+    sta SpriteX,y
+    lda SpriteY
+    sta SpriteY,y
+    lda #$00
+    sta SpriteAttributes,y
+    lda #$10
+    sta spriteVelocityX,y
+    lda #$13
     sta SpriteTile,y
     
     iny
     iny
     iny
     iny
+
+    dex
     bne -
-rts
+
+    rts
 
 createStars:
     lda #$02            ; Use palette 02
@@ -223,7 +367,7 @@ createStars:
     jsr loadPalette
     
     
-    ldy #$00
+    ldy #$10
 -
     jsr rng
     sta SpriteX,y
@@ -234,6 +378,8 @@ createStars:
     jsr rng
     and #$03
     sta spriteVelocityX,y
+    clc
+    adc #$02
     sta SpriteTile,y
 
     iny

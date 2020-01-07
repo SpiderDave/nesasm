@@ -1,3 +1,4 @@
+; Load a palette given the palette number (A register) and slot (Y register).
 loadPalette:
     tax
     
@@ -6,7 +7,6 @@ loadPalette:
     tya
     asl
     asl
-    ;lda #$00
     sta PPUADDR
     
     lda palettes_lo, x
@@ -29,7 +29,6 @@ palettes_lo:
     .db <palette00, <palette01, <palette02, <palette03, <palette04, <palette05, <palette06, <palette07, <palette08, <palette09
 palettes_hi:
     .db >palette00, >palette01, >palette02, >palette03, >palette04, >palette05, >palette06, >palette07, >palette08, >palette09
-    
 palette00:
     .db $0F, $21, $11, $01
 palette01:
