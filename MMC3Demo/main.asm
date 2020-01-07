@@ -33,8 +33,6 @@ include code\ggsound\ggsound.inc
 .include code\nesRegisters.asm
 .include code\constants.asm
 
-.include code\mmc3.asm
-
 .include code\printer.asm
 .include code\palettes.asm
 
@@ -50,11 +48,13 @@ NMI:
     tya
     pha
     
+    lda #$00
+    sta vblanked
+    
     lda #$02
     sta OAMDMA
 
-    lda #$00
-    sta vblanked
+    
     
     jsr rng
     and #$03
@@ -88,8 +88,15 @@ NMI:
 IRQ:
     rti
 
+; The reset vector and mmc3 initialize code must point into $E000-$FFFF
+; because the state of the mapper at power-on is unspecified.
+.pad $e000
+.include code\mmc3.asm
+
 Reset:
+    lda $1234
     .include code\reset.asm
+
     
 main:
     jsr removeAllSprites
