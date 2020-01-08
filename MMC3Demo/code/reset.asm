@@ -80,5 +80,7 @@ clear_loop:
     lda #$02
     sta OAMDMA
 
-
+;waitVB3:                ; Wait for third vblank
+;    bit PPUSTATUS
+;    bpl waitVB3
 

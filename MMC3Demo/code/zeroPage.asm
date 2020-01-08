@@ -22,3 +22,5 @@ current_song: .dsb 1
 seed: .dsb $02, $ff
 randomNumber: .dsb 1
 
+gameState: .dsb 1
+

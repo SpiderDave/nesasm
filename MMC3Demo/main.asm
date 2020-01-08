@@ -49,14 +49,40 @@ NMI:
     lda #$02            ; transfer sprites from $0200 to the ppu
     sta OAMDMA
     
+    lda gameState
+    bne +
+    lda #$00            ; load main display message
+    jsr print
+    inc gameState
++
+
+    lda gameState
+    cmp #$02
+    bne +
+    jsr showError
++
+    
+    lda #$02            ; load version display message
+    jsr print
+    
+    lda #$00            ; palette 00
+    
+    ldy gameState
+    cpy #$01
+    beq +
     jsr rng             ; load a random number
     and #$03            ; limit to 0 - 3
++
     ldy #$00            ; palette slot 0
     
     jsr loadPalette
     
     lda #$90
     sta PPUCTRL
+    
+    lda #$00
+    sta PPUADDR
+    sta PPUADDR
     
     bit PPUSTATUS
     lda #$00
@@ -91,11 +117,9 @@ IRQ:
 
 Reset:
     .include code\reset.asm
-
-    
 main:
     jsr removeAllSprites
-    inc seed             ; Initialize rng with seed $0001
+    inc seed                    ; Initialize rng with seed $0001
     
     jsr createStars
     
@@ -112,15 +136,7 @@ main:
     lda #$10
     sta SpriteTile,y
     
-    lda #$00            ; load main display message
-    jsr print
-    
-    lda #$02            ; load version display message
-    jsr print
-    
-    lda #$00            ; Use default palette
-    ldy #$00            ; palette slot 0
-    jsr loadPalette
+    jsr waitframe               ; Crashes without this after removing some code from here
     
     lda #$02
     jsr BankSwap
@@ -153,9 +169,6 @@ main:
     jsr play_song
     
     jsr RestoreBank
-    
-    lda #$90
-    sta PPUCTRL
     
     lda #$1e                ; Turn on rendering
     sta PPUMASK
@@ -227,8 +240,11 @@ mainLoop:
     lda #$01                ; Disable sound engine updates
     sta sound_disable_update
     
-;    jsr showError
-    
+    lda gameState
+    cmp #$01
+    bne +
+    inc gameState
+
     lda #$02
     jsr BankSwap
     
@@ -238,6 +254,8 @@ mainLoop:
     jsr play_song
     
     jsr RestoreBank
+
++
     
     lda #$00                ; Enable sound engine updates
     sta sound_disable_update
