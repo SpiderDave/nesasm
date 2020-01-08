@@ -18,7 +18,6 @@ include code\ggsound\ggsound.inc
     
     .ende
 
-
 ; RAM variables
     .base $0200
     .enum $0200
@@ -27,7 +26,6 @@ include code\ggsound\ggsound.inc
     include code\ggsound\ggsound_ram.inc
     
     .ende
-
 
 .include code\banks.asm
 .include code\nesRegisters.asm
@@ -48,9 +46,6 @@ NMI:
     tya
     pha
     
-    lda #$00
-    sta vblanked
-    
     lda #$02            ; transfer sprites from $0200 to the ppu
     sta OAMDMA
     
@@ -60,17 +55,21 @@ NMI:
     
     jsr loadPalette
     
+    lda #$90
+    sta PPUCTRL
+    
+    bit PPUSTATUS
+    lda #$00
+    sta PPUSCROLL
+    lda #$00
+    sta PPUSCROLL
+    
     lda #$02
     jsr BankSwap
     
     soundengine_update
     
     jsr RestoreBank
-    
-    lda #$00
-    sta PPUSCROLL
-    lda #$00
-    sta PPUSCROLL
     
     lda #$01
     sta vblanked
@@ -158,9 +157,8 @@ main:
     lda #$90
     sta PPUCTRL
     
-    lda #%00010010          ; Turn on rendering
+    lda #$1e                ; Turn on rendering
     sta PPUMASK
-    
     
 mainLoop:
     jsr waitframe

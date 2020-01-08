@@ -11,7 +11,6 @@
     txs                 ; Transfer x to stack pointer.
     inx
     stx PPUCTRL
-    
     stx PPUMASK
 
     lda #$08
