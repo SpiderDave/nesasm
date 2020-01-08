@@ -54,8 +54,8 @@ NMI:
     lda #$02            ; transfer sprites from $0200 to the ppu
     sta OAMDMA
     
-    jsr rng
-    and #$03
+    jsr rng             ; load a random number
+    and #$03            ; limit to 0 - 3
     ldy #$00            ; palette slot 0
     
     jsr loadPalette
