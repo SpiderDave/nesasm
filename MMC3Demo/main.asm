@@ -51,22 +51,14 @@ NMI:
     lda #$00
     sta vblanked
     
-    lda #$02
+    lda #$02            ; transfer sprites from $0200 to the ppu
     sta OAMDMA
-
-    
     
     jsr rng
     and #$03
     ldy #$00            ; palette slot 0
-    jsr loadPalette
     
-    ;bit PPUSTATUS
-    lda #$00
-    sta PPUSCROLL
-    sta PPUSCROLL
-    ;lda #$1a
-    ;sta PPUMASK
+    jsr loadPalette
     
     lda #$02
     jsr BankSwap
@@ -74,6 +66,11 @@ NMI:
     soundengine_update
     
     jsr RestoreBank
+    
+    lda #$00
+    sta PPUSCROLL
+    lda #$00
+    sta PPUSCROLL
     
     lda #$01
     sta vblanked
@@ -94,7 +91,6 @@ IRQ:
 .include code\mmc3.asm
 
 Reset:
-    lda $1234
     .include code\reset.asm
 
     
@@ -116,7 +112,6 @@ main:
     sta spriteVelocityX,y
     lda #$10
     sta SpriteTile,y
-    
     
     lda #$00            ; load main display message
     jsr print
@@ -159,6 +154,13 @@ main:
     jsr play_song
     
     jsr RestoreBank
+    
+    lda #$90
+    sta PPUCTRL
+    
+    lda #%00010010          ; Turn on rendering
+    sta PPUMASK
+    
     
 mainLoop:
     jsr waitframe
@@ -224,18 +226,10 @@ mainLoop:
     cmp #$80                ; Check if A pressed
     bne buttonNotPressed    ; branch if not
     
-    lda #$00                ; Turn off rendering
-    sta PPUMASK
-    jsr waitframe
-    
     lda #$01                ; Disable sound engine updates
     sta sound_disable_update
     
-    jsr showError
-    
-    lda #%00011110          ; Turn on rendering
-    sta PPUMASK
-    jsr waitframe
+;    jsr showError
     
     lda #$02
     jsr BankSwap
@@ -254,22 +248,7 @@ mainLoop:
 buttonNotPressed:
     jsr handleStars
     
-    ;bit PPUSTATUS
-    lda #$00
-    sta PPUSCROLL
-    sta PPUSCROLL
-    lda #$1a
-    sta PPUMASK
-    
-    ;lda #$80
-    lda #$90
-    sta PPUCTRL
-    
-;    lda #$02
-;    sta OAMDMA
-    
     jmp mainLoop
-    
 showError:
     lda #$01            ; load error message
     jsr print

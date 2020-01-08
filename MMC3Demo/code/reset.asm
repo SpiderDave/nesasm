@@ -15,7 +15,7 @@
     stx PPUMASK
 
     lda #$08
-    sta $4011
+    sta DMCRAW
 
 ;;; Init machine
 wait0001:
@@ -23,7 +23,7 @@ wait0001:
     bpl wait0001
 
     lda #$10
-    sta $4011
+    sta DMCRAW
 
     ldx #$00
     ldy #$ef
@@ -48,7 +48,7 @@ ramclrloop2:
     bne ramclrloop2
 
     lda #$14
-    sta $4011
+    sta DMCRAW
 
 wait0002:
     bit PPUSTATUS
