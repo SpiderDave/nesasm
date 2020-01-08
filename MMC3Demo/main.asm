@@ -60,6 +60,7 @@ NMI:
     cmp #$02
     bne +
     jsr showError
+    inc gameState
 +
     
     lda #$02            ; load version display message
