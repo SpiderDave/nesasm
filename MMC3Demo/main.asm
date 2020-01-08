@@ -42,7 +42,7 @@ include code\ggsound\ggsound.inc
 .include code\rng.asm
 
 NMI:
-    pha
+    pha                 ; push a,x,y on to the stack
     txa
     pha
     tya
@@ -75,7 +75,7 @@ NMI:
     lda #$01
     sta vblanked
     
-    pla
+    pla                 ; pull y,x,a off the stack
     tay
     pla
     tax
@@ -102,7 +102,7 @@ main:
     
     ;ship
     ldy #$00
-    lda #$00
+    lda #$04
     sta SpriteX,y
     lda #$30
     sta SpriteY,y

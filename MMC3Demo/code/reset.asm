@@ -1,4 +1,4 @@
-;;; Init CPU
+; Init CPU
     sei
     cld
     jsr MMC3Setup
@@ -8,7 +8,7 @@
     stx APUSTATUS
     
     ldx #$ff
-    txs
+    txs                 ; Transfer x to stack pointer.
     inx
     stx PPUCTRL
     
@@ -17,10 +17,10 @@
     lda #$08
     sta DMCRAW
 
-;;; Init machine
-wait0001:
+; Init machine
+waitVB1:                ; Wait for first vblank
     bit PPUSTATUS
-    bpl wait0001
+    bpl waitVB1
 
     lda #$10
     sta DMCRAW
@@ -50,9 +50,9 @@ ramclrloop2:
     lda #$14
     sta DMCRAW
 
-wait0002:
+waitVB2:                ; Wait for second vblank
     bit PPUSTATUS
-    bpl wait0002
+    bpl waitVB2
 
     lda #%10000000
     sta PPUCTRL
