@@ -159,10 +159,12 @@ main:
     sta sound_param_word_2
     lda #>(instrument_list)
     sta sound_param_word_2+1
-    lda #<dpcm_list
-    sta sound_param_word_3
-    lda #>dpcm_list
-    sta sound_param_word_3+1
+    .ifdef dpcm_list
+        lda #<dpcm_list
+        sta sound_param_word_3
+        lda #>dpcm_list
+        sta sound_param_word_3+1
+    .endif
     jsr sound_initialize
     
     lda #$02
