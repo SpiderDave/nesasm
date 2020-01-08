@@ -80,6 +80,9 @@ clear_loop:
     lda #$02
     sta OAMDMA
 
+    lda #$01
+    sta disableInput
+    
 ;waitVB3:                ; Wait for third vblank
 ;    bit PPUSTATUS
 ;    bpl waitVB3

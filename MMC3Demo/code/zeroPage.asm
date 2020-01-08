@@ -14,6 +14,7 @@ temp: .dsb 1
 
 buttons: .dsb 1
 buttonsPress: .dsb 1
+buttonsRelease: .dsb 1
 
 vblanked: .dsb 1
 

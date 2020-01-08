@@ -54,6 +54,7 @@ NMI:
     lda #$00            ; load main display message
     jsr print
     inc gameState
+    
 +
 
     lda gameState
@@ -177,6 +178,13 @@ main:
 mainLoop:
     jsr waitframe
     jsr readJoy
+    
+    
+    lda buttonsRelease
+    cmp #$10                ; Reset if start was just released.
+    bne +
+    jmp Reset
++
     
     lda buttons
     and #$08                ;up

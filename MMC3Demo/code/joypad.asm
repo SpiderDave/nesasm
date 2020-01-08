@@ -2,6 +2,10 @@
 ; so we're hitting two birds with one stone here
 
     lda buttons
+    sta buttonsRelease
+
+
+    lda buttons
     sta buttonsPress
 
     lda #$01
@@ -24,4 +28,10 @@ loop:
     eor buttons
     and buttons
     sta buttonsPress
+    
+    lda buttons
+    eor #$ff
+    and buttonsRelease
+    sta buttonsRelease
+    
     rts
