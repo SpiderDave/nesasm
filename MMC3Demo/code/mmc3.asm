@@ -50,3 +50,7 @@ BankSwap:
     sta $8001
     pla
     rts
+
+setMirroring:
+    sta $a000
+    rts

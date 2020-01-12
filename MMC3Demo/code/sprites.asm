@@ -1,6 +1,7 @@
 removeAllSprites:
     ldy #$00
     lda #$f8
+clc
 removeSprites_loop:
     sta SpriteY,y
     iny

@@ -36,7 +36,9 @@ palette01:
 palette02:
     .db $0F, $33, $23, $03
 palette03:
+    .db $0F, $0f, $01, $01
 palette04:
+    .db $0F, $26, $16, $06
 palette05:
 palette06:
 palette07:

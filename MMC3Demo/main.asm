@@ -28,16 +28,21 @@ include code\ggsound\ggsound.inc
     .ende
 
 .include code\banks.asm
+
 .include code\nesRegisters.asm
 .include code\constants.asm
-
 .include code\printer.asm
 .include code\palettes.asm
-
 .include code\messages.asm
-
 .include code\sprites.asm
 .include code\rng.asm
+;.include code\jumpEngine.asm
+.include code\objects.asm
+.include code\objectData.asm
+.include code\collision.asm
+.include code\bounds.asm
+.include code\timers.asm
+
 
 NMI:
     pha                 ; push a,x,y on to the stack
@@ -46,6 +51,17 @@ NMI:
     tya
     pha
     
+    lda skipNMI         ; This is for when we want to skip most of
+    bne skipNMIStuff    ; the NMI, like when loading a lot of stuff.
+    
+    ; hud irq stuff
+    lda #$1d            ; This value only matters for $c000 and $c001
+    sta $e000           ; Acknowledge any pending interrupts
+    sta $c000           ; Set IRQ counter to number of scanlines to wait
+    sta $c001           ; Write it again to the IRQ counter latch
+    sta $e001           ; Enable IRQ
+    
+    
     lda #$02            ; transfer sprites from $0200 to the ppu
     sta OAMDMA
     
@@ -53,8 +69,11 @@ NMI:
     bne +
     lda #$00            ; load main display message
     jsr print
+
+    lda #$02            ; load version display message
+    jsr print
+
     inc gameState
-    
 +
 
     lda gameState
@@ -64,10 +83,7 @@ NMI:
     inc gameState
 +
     
-    lda #$02            ; load version display message
-    jsr print
-    
-    lda #$00            ; palette 00
+    lda #$00            ; default background palette
     
     ldy gameState
     cpy #$01
@@ -79,18 +95,25 @@ NMI:
     
     jsr loadPalette
     
+    jsr writeBufferToPPU
+    
     lda #$90
     sta PPUCTRL
     
-    lda #$00
-    sta PPUADDR
-    sta PPUADDR
     
-    bit PPUSTATUS
-    lda #$00
+    ; Have to reset Scroll since some of this stuff corrupts it.
+    ; Also, since we have a hud we'll set it to the hud scroll values.
+    ; The game scroll values will be set in the irq.
+    ;
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda #$00            ; reset PPU address to avoid glitches.
+    sta PPUADDR
+    sta PPUADDR
+    lda #$fa            ; Set this to give a little bit of padding to the hud text.  Neat!
+    sta PPUSCROLL       
     sta PPUSCROLL
-    lda #$00
-    sta PPUSCROLL
+    
+skipNMIStuff:
     
     lda #$02
     jsr BankSwap
@@ -110,6 +133,29 @@ NMI:
     
     rti
 IRQ:
+    pha                 ; push a,x,y on to the stack
+    txa
+    pha
+    tya
+    pha
+
+    ;http://bobrost.com/nes/files/mmc3irqs.txt
+    sta $e000           ; Acknowledge the IRQ and disable.
+    
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda scrollX         ; Set our scroll values here after the hud split.
+    sta PPUSCROLL
+    lda scrollY
+    sec
+    sbc #$06
+    sta PPUSCROLL
+
+    pla                 ; pull y,x,a off the stack
+    tay
+    pla
+    tax
+    pla
+
     rti
 
 ; The reset vector and mmc3 initialize code must point into $E000-$FFFF
@@ -120,23 +166,81 @@ IRQ:
 Reset:
     .include code\reset.asm
 main:
+    lda #$01            ; set mirroring to horizontal
+    jsr setMirroring
+    
+    lda #$40            ; disable frame counter to make irq work
+    sta $4017
+    
+    cli                 ; Clear interrupt Disable Bit (so we can use irqs)
+    
+    lda #$01
+    sta skipNMI         ; skip (most of) NMI code.
+    
+    LDA #$00
+    sta PPUMASK
+    jsr waitframe
+    
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda #$20
+    sta PPUADDR         ; Write address high byte to PPU
+    lda #$20
+    sta PPUADDR         ; Write address low byte to PPU
+    
+    ldy #$00
+--
+    ldx #$10
+-
+    jsr rng
+    ;and #$0f
+    ;clc
+    ;adc #$f1
+    ora #$f1
+    
+    cmp #$f4
+    bcc + 
+    lda #$00
++
+    
+    sta PPUDATA
+    dex
+    bne -
+    dey
+    bne --
+    
+    lda #$03            ; hud
+    jsr print
+
+    
+    
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda #$00            ; reset PPU address to avoid glitches.
+    sta PPUADDR
+    sta PPUADDR
+    lda scrollX
+    sta PPUSCROLL       ; reset Scroll since some of this stuff corrupts it.
+    lda scrollY
+    sta PPUSCROLL
+    
+    jsr waitframe
+    lda #$1e                    ; Turn on rendering
+    sta PPUMASK
+
+    lda #$00
+    sta skipNMI
+    
     jsr removeAllSprites
     inc seed                    ; Initialize rng with seed $0001
     
-    jsr createStars
+    lda #$00            ; Use palette 00
+    ldy #$04            ; Put in palette slot 4
+    jsr loadPalette
     
-    ;ship
-    ldy #$00
-    lda #$04
-    sta SpriteX,y
-    lda #$30
-    sta SpriteY,y
-    lda #$00
-    sta SpriteAttributes,y
-    lda #$02
-    sta spriteVelocityX,y
-    lda #$10
-    sta SpriteTile,y
+    lda #$02            ; Use palette 02
+    ldy #$05            ; Put in palette slot 5
+    jsr loadPalette
+    
+    jsr loadObjects
     
     jsr waitframe               ; Crashes without this after removing some code from here
     
@@ -151,30 +255,32 @@ main:
     sta sound_param_word_0
     lda #>(song_list)
     sta sound_param_word_0+1
-    lda #<(sfx_list)
-    sta sound_param_word_1
-    lda #>(sfx_list)
-    sta sound_param_word_1+1
+    ifdef sfx_list
+        lda #<(sfx_list)
+        sta sound_param_word_1
+        lda #>(sfx_list)
+        sta sound_param_word_1+1
+    endif
     lda #<(instrument_list)
     sta sound_param_word_2
     lda #>(instrument_list)
     sta sound_param_word_2+1
-    .ifdef dpcm_list
+    ifdef dpcm_list
         lda #<dpcm_list
         sta sound_param_word_3
         lda #>dpcm_list
         sta sound_param_word_3+1
-    .endif
+    endif
     jsr sound_initialize
     
-    lda #$02
+    lda #$00
     sta current_song
     sta sound_param_byte_0
     jsr play_song
     
     jsr RestoreBank
     
-    lda #$1e                ; Turn on rendering
+    lda #$1e                    ; Turn on rendering
     sta PPUMASK
     
 mainLoop:
@@ -182,73 +288,154 @@ mainLoop:
     jsr readJoy
     
     
+    lda paused
+    beq +
     lda buttonsRelease
-    cmp #$10                ; Reset if start was just released.
+    cmp #$20                    ; Press select while paused to reset
     bne +
     jmp Reset
 +
     
-    lda buttons
-    and #$08                ;up
+    lda buttonsRelease
+    cmp #$10                    ; Pause
+    bne +
+    lda paused
+    eor #$01
+    sta paused
++
+    lda paused
+    bne mainLoop
+    
+    jsr handleTimers
+    
+    
+    lda timer1                  ; generate enemies based on timer
+    asl
+    asl
+    asl
     cmp #$08
     bne +
-    lda SpriteY
+    lda #$04
+    jsr createObject
+    lda #$f8
+    sta objectX_hi,x
+    jsr rng
+    sta objectY_hi,x
++
+    
+    inc scrollX                 ; Scroll the level
+    
+    jsr handleObjects
+    
+    jsr checkCollision
+    
+    lda buttons
+    and #$08                    ;up
+    cmp #$08
+    bne +
+    lda objectY
     sec
-    sbc #$01
-    sta SpriteY
+    sbc #shipSpeed
+    sta objectY
+    lda objectY_hi
+    sbc #shipSpeed_hi
+    sta objectY_hi
     jmp ++
 +
     lda buttons
-    and #$04                ;down
+    and #$04                    ;down
     cmp #$04
     bne +
-    lda SpriteY
+    lda objectY
     clc
-    adc #$01
-    sta SpriteY
+    adc #shipSpeed
+    sta objectY
+    lda objectY_hi
+    adc #shipSpeed_hi
+    sta objectY_hi
     jmp ++
 +
 ++
     lda buttons
-    and #$02                ;left
+    and #$02                    ;left
     cmp #$02
     bne +
-    lda SpriteX
+    lda objectX
     sec
-    sbc #$01
-    sta SpriteX
+    sbc #shipSpeed
+    sta objectX
+    lda objectX_hi
+    sbc #shipSpeed_hi
+    sta objectX_hi
     jmp ++
 +
     lda buttons
-    and #$01                ;right
+    and #$01                    ;right
     cmp #$01
     bne +
-    lda SpriteX
+    lda objectX
     clc
-    adc #$01
-    sta SpriteX
+    adc #shipSpeed
+    sta objectX
+    lda objectX_hi
+    adc #shipSpeed_hi
+    sta objectX_hi
     jmp ++
 +
 ++
-    lda buttons
-    and #$40                ;B
+    lda buttons;Press
+    and #$40                    ;B
     cmp #$40
     bne +
     
-    ldy #$04
-    lda SpriteTile, y
-    cmp #$13
-    beq +
     
-    jsr createLaser
+    lda shootCooldown
+    bne +
+    
+    lda #$02
+    jsr BankSwap
+
+    lda #$01
+    sta sound_param_byte_0
+    lda #soundeffect_one
+    sta sound_param_byte_1
+    jsr play_sfx
+    
+    jsr RestoreBank
+    
+    
+    lda #$02                    ; laser
+    jsr createObject
+    lda objectX_hi
+    sta objectX_hi,x
+    lda objectY_hi
+    sta objectY_hi,x
+    lda #$0c
+    sta objectVelocityX,x
+    
+    lda #$03                    ; laser
+    jsr createObject
+    lda objectX_hi
+    sec
+    sbc #$08
+    sta objectX_hi,x
+    lda objectY_hi
+    sta objectY_hi,x
+    lda #$0c
+    sta objectVelocityX,x
+    
+    lda #$06
+    sta shootCooldown
+    
     jmp ++
 +
 
     lda buttonsPress
-    cmp #$80                ; Check if A pressed
-    bne buttonNotPressed    ; branch if not
+    lda #$00 ; disable *****
+    cmp #$80                    ; Check if A pressed
+    bne buttonNotPressed        ; branch if not
     
-    lda #$01                ; Disable sound engine updates
+    lda #$01                    ; Disable sound engine updates
     sta sound_disable_update
     
     lda gameState
@@ -256,26 +443,65 @@ mainLoop:
     bne +
     inc gameState
 
-    lda #$02
-    jsr BankSwap
+; buffer test ----------------
+;    lda #<testData
+;    sta temp16
+;    lda #>testData
+;    sta temp16+1
     
-    lda #$03
-    sta current_song
-    sta sound_param_byte_0
-    jsr play_song
+;    ldy #$02
+;    lda (temp16),y
+;    clc
+;    adc #$03
+;    sta temp
     
-    jsr RestoreBank
-
-+
+;    ldx buffer1Offset
+;    ldy #$00
+;-
+;    lda (temp16),y
+;    sta buffer1,x
     
+;    inx
+;    iny
+    
+;    cpy temp
+;    bne -
+;    stx buffer1Offset
+; ----------------------------
     lda #$00                ; Enable sound engine updates
     sta sound_disable_update
     
 ++
 buttonNotPressed:
-    jsr handleStars
+
+    lda buttonsRelease
+    ;lda #$00 ; disable *****
+    cmp #$20
+    bne ++
+    lda current_song
+    cmp #sfx_num_tracks - 1
+    bne +
+    lda #$ff
+    sta current_song
++
+    inc current_song
+    dec musicPlaying
+++
+    lda musicPlaying
+    bne +
+    lda #$02
+    jsr BankSwap
+    
+    lda current_song
+    sta sound_param_byte_0
+    jsr play_song
+    inc musicPlaying
+    
+    jsr RestoreBank
++
     
     jmp mainLoop
+
 showError:
     lda #$01            ; load error message
     jsr print
@@ -286,124 +512,42 @@ showError:
     
     rts
 
-handleStars:
-    ldy #$10
--
-    lda spriteVelocityX,y
-    sta temp
-
-    lda SpriteX,y
-    sec
-    sbc temp
-    sta SpriteX,y
-    iny
-    iny
-    iny
-    iny
-    bne -
-
-    ; lasers
-    ldy #$04
-    ldx #$03
--
-    lda #$f8
-    sta SpriteY,y
+writeBufferToPPU:
+    lda buffer1Offset
+    beq bufferDone      ; If the buffer offset is 0, it's empty.  Skip to end.
     
-    lda SpriteTile,y
-    cmp #$12
-    beq ++
+    ldx #$00            ; Initialize x for our buffer index
+bufferLoop1:
+    ldy #$00
     
-    lda spriteVelocityX,y
-    sta temp
-
-    lda SpriteX,y
-    clc
-    adc temp
-    sta SpriteX,y
-    cmp #$f0
-    bcc +
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda buffer1,x       ; Load first byte from our buffer chunk
+    sta PPUADDR         ; Write address high byte to PPU
+    inx
+    lda buffer1,x       ; Load first byte from our buffer chunk
+    sta PPUADDR         ; Write address low byte to PPU
+    inx
     
-    lda #$12
-    sta SpriteTile,y
-+
+    lda buffer1,x       ; Get length of this chunk
+    tay                 ; Store in y to indicate when this chunk is done
+    inx
+bufferLoop2:
+    lda buffer1,x       ; Get next byte from buffer
+    sta PPUDATA         ; Store byte in PPU
+    inx                 ; Increase buffer index
+    dey                 ; Decrease y
+    bne bufferLoop2     ; If y is not 0, we haven't reached the end of this chunk
     
-    lda SpriteY
-    sta SpriteY,y
-++
-    iny
-    iny
-    iny
-    iny
+    cpx buffer1Offset   ; Check if our buffer index in x matches the stored buffer offset
+    bne bufferLoop1     ; If not, read another chunk
     
-    dex
-    bne -
-
-
-rts
-
-
-createLaser:
-    ldy #$04
-    ldx #$03
--
-    txa
-    asl
-    asl
-    asl
-    clc
-    adc SpriteX
-    sec
-    sbc #$0f
-    sta SpriteX,y
-    lda SpriteY
-    sta SpriteY,y
-    lda #$00
-    sta SpriteAttributes,y
-    lda #$10
-    sta spriteVelocityX,y
-    lda #$13
-    sta SpriteTile,y
-    
-    iny
-    iny
-    iny
-    iny
-
-    dex
-    bne -
-
+    lda #$00            ; Reset our stored buffer offset
+    sta buffer1Offset
+bufferDone:
     rts
 
-createStars:
-    lda #$02            ; Use palette 02
-    ldy #$04            ; palette slot 4
-    jsr loadPalette
-    
-    
-    ldy #$10
--
-    jsr rng
-    sta SpriteX,y
-    jsr rng
-    sta SpriteY,y
-    lda #$20
-    sta SpriteAttributes,y
-    jsr rng
-    and #$03
-    sta spriteVelocityX,y
-    clc
-    adc #$02
-    sta SpriteTile,y
 
-    iny
-    iny
-    iny
-    iny
-    bne -
-rts
-
-readJoy:
-    .include code\joypad.asm
+.include code\joypad.asm
 
 waitframe:
     lda #$00
@@ -412,6 +556,12 @@ waitloop:
     lda vblanked
     beq waitloop
     rts
+
+; with ggsound, DPCM data MUST be at $C000 or later
+.align 64
+include code\ggsound\track_dpcm.inc
+include code\ggsound\shmup_dpcm.asm
+
 
     .org $fffa
 

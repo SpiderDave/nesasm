@@ -1,7 +1,9 @@
 ; Init CPU
     sei
     cld
-    jsr MMC3Setup
+    .ifdef MMC3Setup
+        jsr MMC3Setup
+    .endif
     ldx #$c0
     stx JOY2
     ldx #$00
@@ -42,7 +44,7 @@ ramclrloop:
     ;initialize sprites
     lda #$EF
 ramclrloop2:
-    sta $200,x
+    sta SpriteData,x
     inx
     bne ramclrloop2
 
@@ -87,3 +89,5 @@ clear_loop:
 ;    bit PPUSTATUS
 ;    bpl waitVB3
 
+
+    inc seed                    ; Initialize rng with seed $0001
