@@ -1,4 +1,4 @@
 # nesasm
 NES ASM Projects:
 
-MMC3Demo - A small demo of a MMC mapper NES GAME with GGSound Audio.
+MMC3Demo - A work-in-progress Shmup game using MMC3 mapper and GGSound Audio.
