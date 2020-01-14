@@ -21,8 +21,11 @@ object03:       ; laser2
 object04:       ; enemy
     .db $20     ; tile
     .db $01     ; palette
-    
-object05:
+
+object05:       ; ?
+    .db $15     ; tile
+    .db $02     ; palette
+
 object06:
 object07:
 object08:

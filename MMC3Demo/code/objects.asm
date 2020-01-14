@@ -64,10 +64,14 @@ rts
 resetObject:
     lda #$00
     sta objectType,x
+    sta objectX,x
     sta objectX_hi,x
+    sta objectY,x
     sta objectY_hi,x
     sta objectVelocityX,x
+    sta objectVelocityX_hi,x
     sta objectVelocityY,x
+    sta objectVelocityY_hi,x
     sta objectTile,x
 rts
 
@@ -79,33 +83,47 @@ handleObjects:
     lda objectType,x
     beq skipThisObject
     
-    cmp #$04
-    bne ++
-    lda objectX_hi,x
-    sec
-    sbc #$02
-    bcc deleteThis
-    sta objectX_hi,x
-++
+    lda objectVelocityX_hi,x
+    asl
+    adc #$00
+    and #$01
+    sta temp1                   ; stores 1 if x velocity is negative, 0 otherwise.
+    lda objectVelocityY_hi,x
+    asl
+    adc #$00
+    and #$01
+    sta temp2                   ; stores 1 if y velocity is negative, 0 otherwise.
     
-    lda objectVelocityX,x
-    sta temp
-    lda objectX_hi,x
+    lda objectX,x
     clc
-    adc temp
+    adc objectVelocityX,x
+    sta objectX,x
+    lda objectX_hi,x
+    adc objectVelocityX_hi,x
     sta objectX_hi,x
-    bcc +
+    
+    lda #$00
+    adc #$00
+    cmp temp1
+    beq +
+    
 deleteThis:
     jsr deleteObject
     jmp skipThisObject
 +
-    
-    lda objectVelocityY,x
-    sta temp
-    lda objectY_hi,x
+    lda objectY,x
     clc
-    adc temp
+    adc objectVelocityY,x
+    sta objectY,x
+    lda objectY_hi,x
+    adc objectVelocityY_hi,x
     sta objectY_hi,x
+
+    lda #$00
+    adc #$00
+    cmp temp2
+    bne deleteThis
+    
     
     lda objectTile,x
     sta SpriteTile,y
@@ -142,6 +160,8 @@ objectsTest:
     .db $04, $e0, $50
     .db $04, $c0, $70
     .db $04, $e0, $90
+    
+    .db $05, $b0, $70
     
     .db $ff
 

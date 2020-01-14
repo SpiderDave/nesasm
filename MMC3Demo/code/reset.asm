@@ -1,6 +1,6 @@
 ; Init CPU
     sei
-    cld
+    cld                 ; clear decimal mode
     .ifdef MMC3Setup
         jsr MMC3Setup
     .endif

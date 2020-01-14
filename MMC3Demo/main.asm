@@ -1,13 +1,11 @@
-include code\ggsound\ggsound.inc
+; iNES header
+    .db "NES",$1A                               ; iNES signature
+    .db $04                                     ; Number of 0x4000 PRG ROM banks
+    .db $01                                     ; Number of 0x2000 CHR ROM banks
+    .db $41                                     ; Mirroring and mapper lower nibble
+    .db $00                                     ; mapper upper nibble
 
-; ines header
-    .db "NES",$1A                                 ; iNES signature
-    .db $04                                       ; Number of 0x4000 PRG ROM banks
-    .db $01                                       ; Number of 0x2000 CHR ROM banks
-    .db $41                                       ; Mirroring and mapper lower nibble
-    .db $00                                       ; mapper upper nibble
-
-    .db $00,$00,$00,$00,$00,$00,$00,$00           ; unused 
+    .db $00,$00,$00,$00,$00,$00,$00,$00         ; unused 
 
 ; Zero page variables
     .base $0000
@@ -27,21 +25,25 @@ include code\ggsound\ggsound.inc
     
     .ende
 
-.include code\banks.asm
+; Include constants, macros
+include code\ggsound\ggsound.inc                ; GGSound
+include code\nesRegisters.asm                   ; various NES-specific constants
+include code\constants.asm                      ; other constants
+include code\banks.asm                          ; Bank asignments
 
-.include code\nesRegisters.asm
-.include code\constants.asm
-.include code\printer.asm
-.include code\palettes.asm
-.include code\messages.asm
-.include code\sprites.asm
-.include code\rng.asm
-;.include code\jumpEngine.asm
-.include code\objects.asm
-.include code\objectData.asm
-.include code\collision.asm
-.include code\bounds.asm
-.include code\timers.asm
+; Now we are in the fixed bank at $c000
+; Include various labels, code
+include code\printer.asm                        ; Screen print routine
+include code\messages.asm
+include code\palettes.asm
+include code\sprites.asm                        ; Sprite-related routines
+include code\rng.asm                            ; Random number generator
+;include code\jumpEngine.asm
+include code\objects.asm                        ; load and handle game objects
+include code\objectData.asm                     ; game object data
+include code\collision.asm                      ; handle object collision
+include code\bounds.asm                         ; handle object bounds
+include code\timers.asm                         ; various timers
 
 
 NMI:
@@ -143,9 +145,9 @@ IRQ:
     sta $e000           ; Acknowledge the IRQ and disable.
     
     bit PPUSTATUS       ; Reset address latch flip-flop
-    lda scrollX         ; Set our scroll values here after the hud split.
+    lda scrollX_hi      ; Set our scroll values here after the hud split.
     sta PPUSCROLL
-    lda scrollY
+    lda scrollY_hi
     sec
     sbc #$06
     sta PPUSCROLL
@@ -187,14 +189,12 @@ main:
     lda #$20
     sta PPUADDR         ; Write address low byte to PPU
     
+    ; Draw random stars ----------
     ldy #$00
 --
     ldx #$10
 -
     jsr rng
-    ;and #$0f
-    ;clc
-    ;adc #$f1
     ora #$f1
     
     cmp #$f4
@@ -207,19 +207,18 @@ main:
     bne -
     dey
     bne --
+    ; ----------------------------
     
-    lda #$03            ; hud
+    lda #$03                    ; print hud
     jsr print
-
     
-    
-    bit PPUSTATUS       ; Reset address latch flip-flop
-    lda #$00            ; reset PPU address to avoid glitches.
+    bit PPUSTATUS               ; Reset address latch flip-flop
+    lda #$00                    ; reset PPU address to avoid glitches.
     sta PPUADDR
     sta PPUADDR
-    lda scrollX
-    sta PPUSCROLL       ; reset Scroll since some of this stuff corrupts it.
-    lda scrollY
+    lda scrollX_hi
+    sta PPUSCROLL               ; reset Scroll since some of this stuff corrupts it.
+    lda scrollY_hi
     sta PPUSCROLL
     
     jsr waitframe
@@ -232,15 +231,44 @@ main:
     jsr removeAllSprites
     inc seed                    ; Initialize rng with seed $0001
     
-    lda #$00            ; Use palette 00
-    ldy #$04            ; Put in palette slot 4
+    lda #$00                    ; Use palette 00
+    ldy #$04                    ; Put in palette slot 4
     jsr loadPalette
     
-    lda #$02            ; Use palette 02
-    ldy #$05            ; Put in palette slot 5
+    lda #$02                    ; Use palette 02
+    ldy #$05                    ; Put in palette slot 5
     jsr loadPalette
     
+    lda #$03                    ; Use palette 03
+    ldy #$06                    ; Put in palette slot 6
+    jsr loadPalette
+    
+    lda #$04                    ; Use palette 04
+    ldy #$07                    ; Put in palette slot 7
+    jsr loadPalette
+
     jsr loadObjects
+    
+    lda #$05
+    jsr createObject
+    lda #$60
+    sta objectX_hi,x
+    sta objectY_hi,x
+    lda #$60
+    sta objectVelocityY,x
+    lda #$00
+    sta objectVelocityY_hi,x
+    
+    
+    lda #$05
+    jsr createObject
+    lda #$60
+    sta objectX_hi,x
+    sta objectY_hi,x
+    lda #$9f
+    sta objectVelocityY,x
+    lda #$ff
+    sta objectVelocityY_hi,x
     
     jsr waitframe               ; Crashes without this after removing some code from here
     
@@ -321,9 +349,21 @@ mainLoop:
     sta objectX_hi,x
     jsr rng
     sta objectY_hi,x
+    lda #$2f
+    sta objectVelocityX,x
+    lda #$ff
+    sta objectVelocityX_hi,x
+    
+    
 +
     
-    inc scrollX                 ; Scroll the level
+    lda scrollX                 ; Scroll the level
+    clc
+    adc #scrollSpeed
+    sta scrollX
+    lda scrollX_hi
+    adc #scrollSpeed_hi
+    sta scrollX_hi
     
     jsr handleObjects
     
@@ -411,7 +451,7 @@ mainLoop:
     lda objectY_hi
     sta objectY_hi,x
     lda #$0c
-    sta objectVelocityX,x
+    sta objectVelocityX_hi,x
     
     lda #$03                    ; laser
     jsr createObject
@@ -422,7 +462,7 @@ mainLoop:
     lda objectY_hi
     sta objectY_hi,x
     lda #$0c
-    sta objectVelocityX,x
+    sta objectVelocityX_hi,x
     
     lda #$06
     sta shootCooldown

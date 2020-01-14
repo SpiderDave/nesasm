@@ -1,6 +1,5 @@
 OAM = $0200
 
-
 SpriteData = OAM
 SpriteY = SpriteData
 SpriteTile = SpriteData+1
@@ -23,3 +22,5 @@ shipSpeed = $80
 shipSpeed_hi = $01
 maxObjects = 40
 
+scrollSpeed_hi = $00
+scrollSpeed = $c0
