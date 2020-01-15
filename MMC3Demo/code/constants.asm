@@ -27,3 +27,6 @@ scrollSpeed = $c0
 
 object_player = $01
 
+mode_reset = $00
+mode_title = $01
+mode_playing = $02

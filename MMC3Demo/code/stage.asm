@@ -1,5 +1,13 @@
 loadLevel:
 
+    lda #$01
+    sta skipNMI         ; skip (most of) NMI code.
+    
+
+    LDA #$00
+    sta PPUMASK
+    jsr waitframe
+
     lda #$05                    ; Use palette 05
     ldy #$01                    ; Put in palette slot 1
     jsr loadPalette
@@ -104,5 +112,25 @@ loadLevel:
     bne -
     ; -----------------------------
 
+
+    lda #$03                    ; print hud
+    jsr print
+
+    bit PPUSTATUS               ; Reset address latch flip-flop
+    lda #$00                    ; reset PPU address to avoid glitches.
+    sta PPUADDR
+    sta PPUADDR
+    lda scrollX_hi
+    sta PPUSCROLL               ; reset Scroll since some of this stuff corrupts it.
+    lda scrollY_hi
+    sta PPUSCROLL
+
+    jsr waitframe
+    lda #$1e                    ; Turn on rendering
+    sta PPUMASK
+
+
+    lda #$00
+    sta skipNMI
 
 rts

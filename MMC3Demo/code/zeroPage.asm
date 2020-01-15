@@ -32,3 +32,6 @@ paused:             .dsb 1
 hundreds:           .dsb 1
 tens:               .dsb 1
 ones:               .dsb 1
+
+mode:               .dsb 1
+subMode:            .dsb 1

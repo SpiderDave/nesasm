@@ -45,6 +45,7 @@ include code\collision.asm                      ; handle object collision
 include code\bounds.asm                         ; handle object bounds
 include code\timers.asm                         ; various timers
 include code\stage.asm
+include code\title.asm
 
 NMI:
     pha                 ; push a,x,y on to the stack
@@ -169,10 +170,9 @@ IRQ:
     sec
     sbc #$06
     sta PPUSCROLL
-
+    
     lda #$00
     jsr setRightCHR
-
     
     pla
     sta temp1
@@ -193,6 +193,7 @@ IRQ:
 Reset:
     .include code\reset.asm
 main:
+
     lda #$01            ; set mirroring to horizontal
     jsr setMirroring
     
@@ -204,14 +205,19 @@ main:
     lda #$01
     sta skipNMI         ; skip (most of) NMI code.
     
+    lda #$01
+    sta mode
+    
     LDA #$00
     sta PPUMASK
     jsr waitframe
     
-    jsr loadLevel
     
-    lda #$03                    ; print hud
-    jsr print
+    jsr drawTitle
+    ;jsr loadLevel
+    
+;    lda #$03                    ; print hud
+;    jsr print
     
     bit PPUSTATUS               ; Reset address latch flip-flop
     lda #$00                    ; reset PPU address to avoid glitches.
@@ -312,10 +318,10 @@ main:
     lda #$1e                    ; Turn on rendering
     sta PPUMASK
     
+jmp title
 mainLoop:
     jsr waitframe
     jsr readJoy
-    
     
     lda paused
     beq +

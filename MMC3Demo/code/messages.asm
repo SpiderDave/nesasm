@@ -1,13 +1,11 @@
 messages_lo:
-    .db <message_main, <message_error, <version_date, <hud
+    .db <message_main, <message_error, <version_date, <hud, <message_title
 messages_hi:
-    .db >message_main, >message_error, >version_date, >hud
+    .db >message_main, >message_error, >version_date, >hud, >message_title
 
+message_title:
 message_main:
-    .db $20,$68,"NES MMC3 Thing ",0
-    .db $20,$88,"by SpiderDave",0
-    
-    .db $21,$65,"Do not press A.      ",0
+    .db $21,$65,"Press start.         ",0
     .db $21,$85,"                     ",0
 
     .db $21,$23, $80,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$82,$00
