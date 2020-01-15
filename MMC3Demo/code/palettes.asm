@@ -40,6 +40,7 @@ palette03:
 palette04:
     .db $0F, $27, $17, $07
 palette05:
+    .db $0F, $28, $18, $08
 palette06:
 palette07:
 palette08:

@@ -22,6 +22,7 @@ objectReserved3:    .dsb maxObjects
 
 shootCooldown:      .dsb 1
 
+scrollX_page:       .dsb 1
 scrollX_hi:         .dsb 1
 scrollX:            .dsb 1
 scrollY_hi          .dsb 1

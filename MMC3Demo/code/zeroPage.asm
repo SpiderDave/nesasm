@@ -29,3 +29,6 @@ skipNMI:            .dsb 1
 
 paused:             .dsb 1
 
+hundreds:           .dsb 1
+tens:               .dsb 1
+ones:               .dsb 1

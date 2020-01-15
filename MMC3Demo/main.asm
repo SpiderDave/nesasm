@@ -1,7 +1,7 @@
 ; iNES header
     .db "NES",$1A                               ; iNES signature
     .db $04                                     ; Number of 0x4000 PRG ROM banks
-    .db $01                                     ; Number of 0x2000 CHR ROM banks
+    .db $02                                     ; Number of 0x2000 CHR ROM banks
     .db $41                                     ; Mirroring and mapper lower nibble
     .db $00                                     ; mapper upper nibble
 
@@ -44,7 +44,7 @@ include code\objectData.asm                     ; game object data
 include code\collision.asm                      ; handle object collision
 include code\bounds.asm                         ; handle object bounds
 include code\timers.asm                         ; various timers
-
+include code\stage.asm
 
 NMI:
     pha                 ; push a,x,y on to the stack
@@ -53,11 +53,17 @@ NMI:
     tya
     pha
     
+    lda temp1
+    pha
+    
     lda skipNMI         ; This is for when we want to skip most of
     bne skipNMIStuff    ; the NMI, like when loading a lot of stuff.
     
+    lda #$01
+    jsr setRightCHR
+
     ; hud irq stuff
-    lda #$1d            ; This value only matters for $c000 and $c001
+    lda #$1e            ; This value only matters for $c000 and $c001
     sta $e000           ; Acknowledge any pending interrupts
     sta $c000           ; Set IRQ counter to number of scanlines to wait
     sta $c001           ; Write it again to the IRQ counter latch
@@ -69,11 +75,11 @@ NMI:
     
     lda gameState
     bne +
-    lda #$00            ; load main display message
-    jsr print
+;    lda #$00            ; load main display message
+;    jsr print
 
-    lda #$02            ; load version display message
-    jsr print
+;    lda #$02            ; load version display message
+;    jsr print
 
     inc gameState
 +
@@ -102,7 +108,6 @@ NMI:
     lda #$90
     sta PPUCTRL
     
-    
     ; Have to reset Scroll since some of this stuff corrupts it.
     ; Also, since we have a hud we'll set it to the hud scroll values.
     ; The game scroll values will be set in the irq.
@@ -127,6 +132,9 @@ skipNMIStuff:
     lda #$01
     sta vblanked
     
+    pla
+    sta temp1
+    
     pla                 ; pull y,x,a off the stack
     tay
     pla
@@ -140,17 +148,34 @@ IRQ:
     pha
     tya
     pha
+    
+    lda temp1
+    pha
 
     ;http://bobrost.com/nes/files/mmc3irqs.txt
     sta $e000           ; Acknowledge the IRQ and disable.
     
+    ; small delay to hblank
+;    ldy #$34
+;-   dey
+;    bne -
+    
     bit PPUSTATUS       ; Reset address latch flip-flop
     lda scrollX_hi      ; Set our scroll values here after the hud split.
+    sec
+    sbc #$06
     sta PPUSCROLL
     lda scrollY_hi
     sec
     sbc #$06
     sta PPUSCROLL
+
+    lda #$00
+    jsr setRightCHR
+
+    
+    pla
+    sta temp1
 
     pla                 ; pull y,x,a off the stack
     tay
@@ -183,31 +208,7 @@ main:
     sta PPUMASK
     jsr waitframe
     
-    bit PPUSTATUS       ; Reset address latch flip-flop
-    lda #$20
-    sta PPUADDR         ; Write address high byte to PPU
-    lda #$20
-    sta PPUADDR         ; Write address low byte to PPU
-    
-    ; Draw random stars ----------
-    ldy #$00
---
-    ldx #$10
--
-    jsr rng
-    ora #$f1
-    
-    cmp #$f4
-    bcc + 
-    lda #$00
-+
-    
-    sta PPUDATA
-    dex
-    bne -
-    dey
-    bne --
-    ; ----------------------------
+    jsr loadLevel
     
     lda #$03                    ; print hud
     jsr print
@@ -303,8 +304,8 @@ main:
     
     lda #$00
     sta current_song
-    sta sound_param_byte_0
-    jsr play_song
+    ;lda #$ff
+    sta musicPlaying
     
     jsr RestoreBank
     
@@ -348,11 +349,19 @@ mainLoop:
     lda #$f8
     sta objectX_hi,x
     jsr rng
+    lsr
+    adc #$40
     sta objectY_hi,x
     lda #$2f
     sta objectVelocityX,x
     lda #$ff
     sta objectVelocityX_hi,x
+    
+    jsr rng
+    and #$7f
+    sta temp
+    sta objectVelocityX,x
+    sbc temp
     
     
 +
@@ -364,6 +373,10 @@ mainLoop:
     lda scrollX_hi
     adc #scrollSpeed_hi
     sta scrollX_hi
+    
+    lda scrollX_page
+    adc #$00
+    sta scrollX_page
     
     jsr handleObjects
     
@@ -470,6 +483,42 @@ mainLoop:
     jmp ++
 +
 
+    lda buttonsRelease
+    cmp #$20                ;select
+    ;bne +
+    
+    lda timer1
+;    lda DUMMY
+;    lda #$e4
+    jsr convertNumber
+    
+    ldx buffer1Offset
+    
+    lda #$20
+    sta buffer1,x
+    inx
+    lda #$40
+    sta buffer1,x
+    inx
+    lda #$03
+    sta buffer1,x
+    inx
+    
+    ldy hundreds
+    lda hexTable, y
+    sta buffer1,x
+    inx
+    ldy tens
+    lda hexTable, y
+    sta buffer1,x
+    inx
+    ldy ones
+    lda hexTable, y
+    sta buffer1,x
+    inx
+    stx buffer1Offset
+;-----
++
     lda buttonsPress
     lda #$00 ; disable *****
     cmp #$80                    ; Check if A pressed
@@ -552,6 +601,34 @@ showError:
     
     rts
 
+convertNumber:
+    ldx #$00
+    ldy #$00
+-
+    stx hundreds,y
+    iny
+    cpy #$03
+    bne -
+    ldy #$02
+-
+    cmp decimalPlaceValues, y
+    bcc +
+    sbc decimalPlaceValues, y
+    inc hundreds,x
+    jmp -
++
+    cpy #$00
+    beq +
+    dey
+    inx
+    jmp -
++
+rts
+
+decimalPlaceValues:
+    .db $01, $0a, $64
+
+
 writeBufferToPPU:
     lda buffer1Offset
     beq bufferDone      ; If the buffer offset is 0, it's empty.  Skip to end.
@@ -610,6 +687,7 @@ include code\ggsound\shmup_dpcm.asm
     .dw IRQ
 
 .incbin data/chr00.chr
+.incbin data/chr01.chr
 
 
 

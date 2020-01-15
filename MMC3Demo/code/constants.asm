@@ -24,3 +24,6 @@ maxObjects = 40
 
 scrollSpeed_hi = $00
 scrollSpeed = $c0
+
+object_player = $01
+

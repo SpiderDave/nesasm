@@ -54,3 +54,84 @@ BankSwap:
 setMirroring:
     sta $a000
     rts
+    
+; setLeftCHR sets both left CHR banks
+; setRightCHR sets all 4 right CHR banks
+;
+; The chr is divided like this (but it can be 
+; inverted to switch which side gets 2 and which
+; side gets 4 banks).
+;
+;______________________  ______________________
+;| 0                  |  | 2                  |
+;|                    |  |____________________|
+;|                    |  | 3                  |
+;|____________________|  |____________________|
+;| 1                  |  | 4                  |
+;|                    |  |____________________|
+;|                    |  | 5                  |
+;|____________________|  |____________________|
+
+    
+setLeftCHR:
+    ; left chr
+    sta temp1
+    lda #$00
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$00
+    sta $8001
+
+    lda #$01
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$02
+    sta $8001
+rts
+
+
+setRightCHR:
+    ; right chr
+    sta temp1
+    lda #$02
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$04
+    sta $8001
+
+    lda #$03
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$05
+    sta $8001
+
+    lda #$04
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$06
+    sta $8001
+
+    lda #$05
+    sta $8000
+    lda temp1
+    asl
+    asl
+    asl
+    ora #$07
+    sta $8001
+rts
