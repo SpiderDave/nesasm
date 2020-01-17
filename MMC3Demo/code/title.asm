@@ -24,18 +24,33 @@ drawTitle:
     dey
     bne --
 
-    lda #$04
+    lda #$04            ; Title message
+    jsr print
+    lda #$02            ; version
     jsr print
     
+    lda #$00
+    jsr setLeftCHR
+    lda #$0c
+    jsr setRightCHR
+
 rts
 
 title:
     jsr waitframe
     jsr readJoy
 
+    ;lda #$04
+    ;jsr setRightCHR
+
+
     lda buttonsRelease
     cmp #$10
     bne +
+    
+    lda #$04
+    jsr setRightCHR
+
     lda #mode_playing
     sta mode
     jsr loadLevel

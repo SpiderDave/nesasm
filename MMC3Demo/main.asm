@@ -48,7 +48,7 @@ include code\stage.asm
 include code\title.asm
 
 NMI:
-    pha                 ; push a,x,y on to the stack
+    pha                     ; push a,x,y on to the stack
     txa
     pha
     tya
@@ -57,29 +57,29 @@ NMI:
     lda temp1
     pha
     
-    lda skipNMI         ; This is for when we want to skip most of
-    bne skipNMIStuff    ; the NMI, like when loading a lot of stuff.
+    lda skipNMI             ; This is for when we want to skip most of
+    bne skipNMIStuff        ; the NMI, like when loading a lot of stuff.
     
-    lda #$01
-    jsr setRightCHR
+    lda #$0c
+    jsr setRightCHRDirect   ; Set CHR to hud tiles.  We use "Direct" here because it's temporary.
 
     ; hud irq stuff
-    lda #$1e            ; This value only matters for $c000 and $c001
-    sta $e000           ; Acknowledge any pending interrupts
-    sta $c000           ; Set IRQ counter to number of scanlines to wait
-    sta $c001           ; Write it again to the IRQ counter latch
-    sta $e001           ; Enable IRQ
+    lda #$1e                ; This value only matters for $c000 and $c001
+    sta $e000               ; Acknowledge any pending interrupts
+    sta $c000               ; Set IRQ counter to number of scanlines to wait
+    sta $c001               ; Write it again to the IRQ counter latch
+    sta $e001               ; Enable IRQ
     
     
-    lda #$02            ; transfer sprites from $0200 to the ppu
+    lda #$02                ; transfer sprites from $0200 to the ppu
     sta OAMDMA
     
     lda gameState
     bne +
-;    lda #$00            ; load main display message
+;    lda #$00               ; load main display message
 ;    jsr print
 
-;    lda #$02            ; load version display message
+;    lda #$02               ; load version display message
 ;    jsr print
 
     inc gameState
@@ -92,15 +92,15 @@ NMI:
     inc gameState
 +
     
-    lda #$00            ; default background palette
+    lda #$00                ; default background palette
     
     ldy gameState
     cpy #$01
     beq +
-    jsr rng             ; load a random number
-    and #$03            ; limit to 0 - 3
+    jsr rng                 ; load a random number
+    and #$03                ; limit to 0 - 3
 +
-    ldy #$00            ; palette slot 0
+    ldy #$00                ; palette slot 0
     
     jsr loadPalette
     
@@ -113,11 +113,11 @@ NMI:
     ; Also, since we have a hud we'll set it to the hud scroll values.
     ; The game scroll values will be set in the irq.
     ;
-    bit PPUSTATUS       ; Reset address latch flip-flop
-    lda #$00            ; reset PPU address to avoid glitches.
+    bit PPUSTATUS           ; Reset address latch flip-flop
+    lda #$00                ; reset PPU address to avoid glitches.
     sta PPUADDR
     sta PPUADDR
-    lda #$fa            ; Set this to give a little bit of padding to the hud text.  Neat!
+    lda #$fa                ; Set this to give a little bit of padding to the hud text.  Neat!
     sta PPUSCROLL       
     sta PPUSCROLL
     
@@ -136,7 +136,7 @@ skipNMIStuff:
     pla
     sta temp1
     
-    pla                 ; pull y,x,a off the stack
+    pla                     ; pull y,x,a off the stack
     tay
     pla
     tax
@@ -144,7 +144,7 @@ skipNMIStuff:
     
     rti
 IRQ:
-    pha                 ; push a,x,y on to the stack
+    pha                     ; push a,x,y on to the stack
     txa
     pha
     tya
@@ -154,15 +154,15 @@ IRQ:
     pha
 
     ;http://bobrost.com/nes/files/mmc3irqs.txt
-    sta $e000           ; Acknowledge the IRQ and disable.
+    sta $e000               ; Acknowledge the IRQ and disable.
     
     ; small delay to hblank
 ;    ldy #$34
 ;-   dey
 ;    bne -
     
-    bit PPUSTATUS       ; Reset address latch flip-flop
-    lda scrollX_hi      ; Set our scroll values here after the hud split.
+    bit PPUSTATUS           ; Reset address latch flip-flop
+    lda scrollX_hi          ; Set our scroll values here after the hud split.
     sec
     sbc #$06
     sta PPUSCROLL
@@ -171,13 +171,12 @@ IRQ:
     sbc #$06
     sta PPUSCROLL
     
-    lda #$00
-    jsr setRightCHR
+    jsr setCHR              ; Set CHR banks based on CHR0, CHR1, etc.
     
     pla
     sta temp1
 
-    pla                 ; pull y,x,a off the stack
+    pla                     ; pull y,x,a off the stack
     tay
     pla
     tax
@@ -194,16 +193,16 @@ Reset:
     .include code\reset.asm
 main:
 
-    lda #$01            ; set mirroring to horizontal
+    lda #$01                ; set mirroring to horizontal
     jsr setMirroring
     
-    lda #$40            ; disable frame counter to make irq work
+    lda #$40                ; disable frame counter to make irq work
     sta $4017
     
-    cli                 ; Clear interrupt Disable Bit (so we can use irqs)
+    cli                     ; Clear interrupt Disable Bit (so we can use irqs)
     
     lda #$01
-    sta skipNMI         ; skip (most of) NMI code.
+    sta skipNMI             ; skip (most of) NMI code.
     
     lda #$01
     sta mode

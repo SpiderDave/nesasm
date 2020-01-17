@@ -72,66 +72,90 @@ setMirroring:
 ;|                    |  | 5                  |
 ;|____________________|  |____________________|
 
-    
-setLeftCHR:
-    ; left chr
-    sta temp1
+setCHR:
     lda #$00
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$00
+    lda CHR0
     sta $8001
 
     lda #$01
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$02
+    lda CHR1
     sta $8001
-rts
-
-
-setRightCHR:
-    ; right chr
-    sta temp1
+    
     lda #$02
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$04
+    lda CHR2
     sta $8001
 
     lda #$03
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$05
+    lda CHR3
     sta $8001
 
     lda #$04
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$06
+    lda CHR4
     sta $8001
 
     lda #$05
     sta $8000
-    lda temp1
-    asl
-    asl
-    asl
-    ora #$07
+    lda CHR5
     sta $8001
+rts
+    
+setLeftCHR:
+    tax
+    stx CHR0
+    inx
+    inx
+    stx CHR1
+    jsr setCHR
+rts
+setRightCHR:
+    tax
+    stx CHR2
+    inx
+    stx CHR3
+    inx
+    stx CHR4
+    inx
+    stx CHR5
+    jsr setCHR
+rts
+    
+setLeftCHRDirect:
+    tax
+    lda #$00
+    sta $8000
+    stx $8001
+
+    lda #$01
+    sta $8000
+    inx
+    inx
+    stx $8001
+rts
+
+
+setRightCHRDirect:
+    tax
+    lda #$02
+    sta $8000
+    stx $8001
+    
+    lda #$03
+    sta $8000
+    inx
+    stx $8001
+    
+    lda #$04
+    sta $8000
+    inx
+    stx $8001
+    
+    lda #$05
+    sta $8000
+    inx
+    stx $8001
 rts
