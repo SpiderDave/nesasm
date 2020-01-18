@@ -1,28 +1,38 @@
 drawTitle:
-    ; Draw random stars ----------
     bit PPUSTATUS       ; Reset address latch flip-flop
     lda #$20
     sta PPUADDR         ; Write address high byte to PPU
-    lda #$20
+    lda #$00
     sta PPUADDR         ; Write address low byte to PPU
 
-    ldy #$00
---
-    ldx #$10
+    ; - Blank nametable ------------
+    lda #$00            ; Tile
+    ldx #$f0
 -
-    jsr rng
-    ora #$f1
-    
-    cmp #$f4
-    bcc + 
-    lda #$00
-+
-    
+    sta PPUDATA
+    sta PPUDATA
+    sta PPUDATA
     sta PPUDATA
     dex
+    cpx #$00
     bne -
-    dey
-    bne --
+    ; ------------------------------
+
+    ; ------------------------------
+    bit PPUSTATUS       ; Reset address latch flip-flop
+    lda #$23
+    sta PPUADDR         ; Write address high byte to PPU
+    lda #$c0
+    sta PPUADDR         ; Write address low byte to PPU
+
+    lda #$00
+    ldx #$40
+-
+    sta PPUDATA
+    dex
+    cpx #$00
+    bne -
+    ; ------------------------------
 
     lda #$04            ; Title message
     jsr print
@@ -37,17 +47,11 @@ drawTitle:
 rts
 
 title:
-    jsr waitframe
     jsr readJoy
-
-    ;lda #$04
-    ;jsr setRightCHR
-
 
     lda buttonsRelease
     cmp #$10
-    bne +
-    
+    bne title
     lda #$04
     jsr setRightCHR
 
@@ -55,6 +59,3 @@ title:
     sta mode
     jsr loadLevel
     jmp mainLoop
-+
-    
-jmp title

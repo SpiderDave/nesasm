@@ -1,5 +1,15 @@
 OAM = $0200
 
+JOY_RIGHT = $01
+JOY_LEFT = $02
+JOY_DOWN = $04
+JOY_UP = $08
+JOY_START = $10
+JOY_SELECT = $20
+JOY_B = $40
+JOY_A = $80
+
+
 SpriteData = OAM
 SpriteY = SpriteData
 SpriteTile = SpriteData+1

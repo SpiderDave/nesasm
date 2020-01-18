@@ -1,3 +1,5 @@
+; asm6
+
 ; iNES header
     .db "NES",$1A                               ; iNES signature
     .db $04                                     ; Number of 0x4000 PRG ROM banks
@@ -32,7 +34,7 @@ include code\constants.asm                      ; other constants
 include code\banks.asm                          ; Bank asignments
 
 ; Now we are in the fixed bank at $c000
-; Include various labels, code
+include code\joypad.asm
 include code\printer.asm                        ; Screen print routine
 include code\messages.asm
 include code\palettes.asm
@@ -48,61 +50,28 @@ include code\stage.asm
 include code\title.asm
 
 NMI:
-    pha                     ; push a,x,y on to the stack
+    pha                         ; push a,x,y on to the stack
     txa
     pha
     tya
     pha
     
-    lda temp1
-    pha
-    
-    lda skipNMI             ; This is for when we want to skip most of
-    bne skipNMIStuff        ; the NMI, like when loading a lot of stuff.
+    lda skipNMI                 ; This is for when we want to skip most of
+    bne skipNMIStuff            ; the NMI, like when loading a lot of stuff.
     
     lda #$0c
-    jsr setRightCHRDirect   ; Set CHR to hud tiles.  We use "Direct" here because it's temporary.
+    jsr setRightCHRDirect       ; Set CHR to hud tiles.  We use "Direct" here because it's temporary.
 
     ; hud irq stuff
-    lda #$1e                ; This value only matters for $c000 and $c001
-    sta $e000               ; Acknowledge any pending interrupts
-    sta $c000               ; Set IRQ counter to number of scanlines to wait
-    sta $c001               ; Write it again to the IRQ counter latch
-    sta $e001               ; Enable IRQ
+    lda #$1e                    ; This value only matters for $c000 and $c001
+    sta $e000                   ; Acknowledge any pending interrupts
+    sta $c000                   ; Set IRQ counter to number of scanlines to wait
+    sta $c001                   ; Write it again to the IRQ counter latch
+    sta $e001                   ; Enable IRQ
     
     
-    lda #$02                ; transfer sprites from $0200 to the ppu
+    lda #$02                    ; transfer sprites from $0200 to the ppu
     sta OAMDMA
-    
-    lda gameState
-    bne +
-;    lda #$00               ; load main display message
-;    jsr print
-
-;    lda #$02               ; load version display message
-;    jsr print
-
-    inc gameState
-+
-
-    lda gameState
-    cmp #$02
-    bne +
-    jsr showError
-    inc gameState
-+
-    
-    lda #$00                ; default background palette
-    
-    ldy gameState
-    cpy #$01
-    beq +
-    jsr rng                 ; load a random number
-    and #$03                ; limit to 0 - 3
-+
-    ldy #$00                ; palette slot 0
-    
-    jsr loadPalette
     
     jsr writeBufferToPPU
     
@@ -113,11 +82,11 @@ NMI:
     ; Also, since we have a hud we'll set it to the hud scroll values.
     ; The game scroll values will be set in the irq.
     ;
-    bit PPUSTATUS           ; Reset address latch flip-flop
-    lda #$00                ; reset PPU address to avoid glitches.
+    bit PPUSTATUS               ; Reset address latch flip-flop
+    lda #$00                    ; reset PPU address to avoid glitches.
     sta PPUADDR
     sta PPUADDR
-    lda #$fa                ; Set this to give a little bit of padding to the hud text.  Neat!
+    lda #$fa                    ; Set this to give a little bit of padding to the hud text.  Neat!
     sta PPUSCROLL       
     sta PPUSCROLL
     
@@ -133,10 +102,7 @@ skipNMIStuff:
     lda #$01
     sta vblanked
     
-    pla
-    sta temp1
-    
-    pla                     ; pull y,x,a off the stack
+    pla                         ; pull y,x,a off the stack
     tay
     pla
     tax
@@ -144,25 +110,16 @@ skipNMIStuff:
     
     rti
 IRQ:
-    pha                     ; push a,x,y on to the stack
+    pha                         ; push a,x,y on to the stack
     txa
     pha
     tya
     pha
-    
-    lda temp1
-    pha
 
-    ;http://bobrost.com/nes/files/mmc3irqs.txt
-    sta $e000               ; Acknowledge the IRQ and disable.
+    sta $e000                   ; Acknowledge the IRQ and disable.
     
-    ; small delay to hblank
-;    ldy #$34
-;-   dey
-;    bne -
-    
-    bit PPUSTATUS           ; Reset address latch flip-flop
-    lda scrollX_hi          ; Set our scroll values here after the hud split.
+    bit PPUSTATUS               ; Reset address latch flip-flop
+    lda scrollX_hi              ; Set our scroll values here after the hud split.
     sec
     sbc #$06
     sta PPUSCROLL
@@ -171,12 +128,9 @@ IRQ:
     sbc #$06
     sta PPUSCROLL
     
-    jsr setCHR              ; Set CHR banks based on CHR0, CHR1, etc.
+    jsr setCHR                  ; Set CHR banks based on CHR0, CHR1, etc.
     
-    pla
-    sta temp1
-
-    pla                     ; pull y,x,a off the stack
+    pla                         ; pull y,x,a off the stack
     tay
     pla
     tax
@@ -193,16 +147,16 @@ Reset:
     .include code\reset.asm
 main:
 
-    lda #$01                ; set mirroring to horizontal
+    lda #$01                    ; set mirroring to horizontal
     jsr setMirroring
     
-    lda #$40                ; disable frame counter to make irq work
+    lda #$40                    ; disable frame counter to make irq work
     sta $4017
     
-    cli                     ; Clear interrupt Disable Bit (so we can use irqs)
+    cli                         ; Clear interrupt Disable Bit (so we can use irqs)
     
     lda #$01
-    sta skipNMI             ; skip (most of) NMI code.
+    sta skipNMI                 ; skip (most of) NMI code.
     
     lda #$01
     sta mode
@@ -211,12 +165,7 @@ main:
     sta PPUMASK
     jsr waitframe
     
-    
     jsr drawTitle
-    ;jsr loadLevel
-    
-;    lda #$03                    ; print hud
-;    jsr print
     
     bit PPUSTATUS               ; Reset address latch flip-flop
     lda #$00                    ; reset PPU address to avoid glitches.
@@ -230,12 +179,16 @@ main:
     jsr waitframe
     lda #$1e                    ; Turn on rendering
     sta PPUMASK
-
+    
     lda #$00
     sta skipNMI
     
     jsr removeAllSprites
     inc seed                    ; Initialize rng with seed $0001
+    
+    lda #$00                    ; Use palette 00
+    ldy #$00                    ; Put in palette slot 0
+    jsr loadPalette
     
     lda #$00                    ; Use palette 00
     ldy #$04                    ; Put in palette slot 4
@@ -276,7 +229,7 @@ main:
     lda #$ff
     sta objectVelocityY_hi,x
     
-    jsr waitframe               ; Crashes without this after removing some code from here
+    ;jsr waitframe               ; Crashes without this after removing some code from here
     
     lda #$02
     jsr BankSwap
@@ -316,26 +269,31 @@ main:
     
     lda #$1e                    ; Turn on rendering
     sta PPUMASK
+    jmp title
     
-jmp title
 mainLoop:
     jsr waitframe
     jsr readJoy
     
     lda paused
     beq +
+    lda #$00                    ; Disable Sound
+    sta APUSTATUS
     lda buttonsRelease
-    cmp #$20                    ; Press select while paused to reset
+    cmp #JOY_SELECT             ; Press select while paused to reset
     bne +
     jmp Reset
 +
     
     lda buttonsRelease
-    cmp #$10                    ; Pause
+    cmp #JOY_START              ; Pause
     bne +
     lda paused
     eor #$01
     sta paused
+    bne +
+    lda #$1f
+    sta APUSTATUS               ; Enable sound
 +
     lda paused
     bne mainLoop
@@ -361,16 +319,12 @@ mainLoop:
     sta objectVelocityX,x
     lda #$ff
     sta objectVelocityX_hi,x
-    
     jsr rng
     and #$7f
     sta temp
     sta objectVelocityX,x
     sbc temp
-    
-    
 +
-    
     lda scrollX                 ; Scroll the level
     clc
     adc #scrollSpeed
@@ -388,9 +342,8 @@ mainLoop:
     jsr checkCollision
     
     lda buttons
-    and #$08                    ;up
-    cmp #$08
-    bne +
+    and #JOY_UP                 ;up
+    beq +
     lda objectY
     sec
     sbc #shipSpeed
@@ -401,9 +354,8 @@ mainLoop:
     jmp ++
 +
     lda buttons
-    and #$04                    ;down
-    cmp #$04
-    bne +
+    and #JOY_DOWN               ;down
+    beq +
     lda objectY
     clc
     adc #shipSpeed
@@ -415,9 +367,8 @@ mainLoop:
 +
 ++
     lda buttons
-    and #$02                    ;left
-    cmp #$02
-    bne +
+    and #JOY_LEFT               ;left
+    beq +
     lda objectX
     sec
     sbc #shipSpeed
@@ -428,9 +379,8 @@ mainLoop:
     jmp ++
 +
     lda buttons
-    and #$01                    ;right
-    cmp #$01
-    bne +
+    and #JOY_RIGHT              ;right
+    beq +
     lda objectX
     clc
     adc #shipSpeed
@@ -441,10 +391,9 @@ mainLoop:
     jmp ++
 +
 ++
-    lda buttons;Press
-    and #$40                    ;B
-    cmp #$40
-    bne +
+    lda buttons
+    and #JOY_B                  ;B
+    beq +
     
     
     lda shootCooldown
@@ -488,13 +437,10 @@ mainLoop:
     jmp ++
 +
 
-    lda buttonsRelease
-    cmp #$20                ;select
-    ;bne +
-    
+;    lda buttonsRelease
+;    cmp #$20                    ;select
+;    bne +
     lda timer1
-;    lda DUMMY
-;    lda #$e4
     jsr convertNumber
     
     ldx buffer1Offset
@@ -522,55 +468,10 @@ mainLoop:
     sta buffer1,x
     inx
     stx buffer1Offset
-;-----
-+
-    lda buttonsPress
-    lda #$00 ; disable *****
-    cmp #$80                    ; Check if A pressed
-    bne buttonNotPressed        ; branch if not
-    
-    lda #$01                    ; Disable sound engine updates
-    sta sound_disable_update
-    
-    lda gameState
-    cmp #$01
-    bne +
-    inc gameState
-
-; buffer test ----------------
-;    lda #<testData
-;    sta temp16
-;    lda #>testData
-;    sta temp16+1
-    
-;    ldy #$02
-;    lda (temp16),y
-;    clc
-;    adc #$03
-;    sta temp
-    
-;    ldx buffer1Offset
-;    ldy #$00
-;-
-;    lda (temp16),y
-;    sta buffer1,x
-    
-;    inx
-;    iny
-    
-;    cpy temp
-;    bne -
-;    stx buffer1Offset
-; ----------------------------
-    lda #$00                ; Enable sound engine updates
-    sta sound_disable_update
-    
 ++
 buttonNotPressed:
-
     lda buttonsRelease
-    ;lda #$00 ; disable *****
-    cmp #$20
+    cmp #JOY_SELECT
     bne ++
     lda current_song
     cmp #sfx_num_tracks - 1
@@ -593,18 +494,7 @@ buttonNotPressed:
     
     jsr RestoreBank
 +
-    
     jmp mainLoop
-
-showError:
-    lda #$01            ; load error message
-    jsr print
-
-    lda #$01            ; Use error palette
-    ldy #$00            ; palette slot 0
-    jsr loadPalette
-    
-    rts
 
 convertNumber:
     ldx #$00
@@ -632,7 +522,6 @@ rts
 
 decimalPlaceValues:
     .db $01, $0a, $64
-
 
 writeBufferToPPU:
     lda buffer1Offset
@@ -667,9 +556,6 @@ bufferLoop2:
     sta buffer1Offset
 bufferDone:
     rts
-
-
-.include code\joypad.asm
 
 waitframe:
     lda #$00
