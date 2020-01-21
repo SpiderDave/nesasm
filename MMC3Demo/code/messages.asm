@@ -1,7 +1,7 @@
 messages_lo:
-    .db <message_main, <message_error, <version_date, <hud, <message_title
+    .db <message_main, <message_error, <version_date, <hud, <message_title, <message_createdBy
 messages_hi:
-    .db >message_main, >message_error, >version_date, >hud, >message_title
+    .db >message_main, >message_error, >version_date, >hud, >message_title, >message_createdBy
 
 message_title:
 message_main:
@@ -26,6 +26,9 @@ message_main:
 message_error:
     .db $21,$65,"                      ",0
     .db $21,$85, "WHAT HAVE YOU DONE?!!",0
+    .db $00
+message_createdBy:
+    .db $23, $23, "Created by SpiderDave",0
     .db $00
 version_date:
     .db $23, $43

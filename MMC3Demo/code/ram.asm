@@ -28,6 +28,9 @@ scrollX:            .dsb 1
 scrollY_hi          .dsb 1
 scrollY:            .dsb 1
 
-
 timer1:             .dsb 1
 timer2:             .dsb 1
+
+
+lives:              .dsb 1
+bombs:              .dsb 1

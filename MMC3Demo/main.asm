@@ -184,7 +184,6 @@ main:
     sta skipNMI
     
     jsr removeAllSprites
-    inc seed                    ; Initialize rng with seed $0001
     
     lda #$00                    ; Use palette 00
     ldy #$00                    ; Put in palette slot 0
@@ -208,26 +207,27 @@ main:
 
     jsr loadObjects
     
-    lda #$05
-    jsr createObject
-    lda #$60
-    sta objectX_hi,x
-    sta objectY_hi,x
-    lda #$60
-    sta objectVelocityY,x
-    lda #$00
-    sta objectVelocityY_hi,x
+    ; test objects
+;    lda #$05
+;    jsr createObject
+;    lda #$60
+;    sta objectX_hi,x
+;    sta objectY_hi,x
+;    lda #$60
+;    sta objectVelocityY,x
+;    lda #$00
+;    sta objectVelocityY_hi,x
     
     
-    lda #$05
-    jsr createObject
-    lda #$60
-    sta objectX_hi,x
-    sta objectY_hi,x
-    lda #$9f
-    sta objectVelocityY,x
-    lda #$ff
-    sta objectVelocityY_hi,x
+;    lda #$05
+;    jsr createObject
+;    lda #$60
+;    sta objectX_hi,x
+;    sta objectY_hi,x
+;    lda #$9f
+;    sta objectVelocityY,x
+;    lda #$ff
+;    sta objectVelocityY_hi,x
     
     ;jsr waitframe               ; Crashes without this after removing some code from here
     

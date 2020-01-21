@@ -20,7 +20,7 @@ vblanked:           .dsb 1
 current_song:       .dsb 1
 musicPlaying:       .dsb 1
 
-seed:               .dsb $02, $ff
+seed:               .dsb 2
 randomNumber:       .dsb 1
 
 gameState:          .dsb 1

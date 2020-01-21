@@ -36,6 +36,8 @@ drawTitle:
 
     lda #$04            ; Title message
     jsr print
+    lda #$05            ; Created by
+    jsr print
     lda #$02            ; version
     jsr print
     
