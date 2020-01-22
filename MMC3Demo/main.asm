@@ -141,10 +141,10 @@ IRQ:
 ; The reset vector and mmc3 initialize code must point into $E000-$FFFF
 ; because the state of the mapper at power-on is unspecified.
 .pad $e000
-.include code\mmc3.asm
+include code\mmc3.asm
 
 Reset:
-    .include code\reset.asm
+    include code\reset.asm
 main:
 
     lda #$01                    ; set mirroring to horizontal
