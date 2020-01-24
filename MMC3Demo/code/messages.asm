@@ -1,7 +1,7 @@
 messages_lo:
-    .db <message_main, <message_error, <version_date, <hud, <message_title, <message_createdBy
+    .db <message_main, <message_error, <version_date, <hud, <message_title, <message_createdBy, <message_test2
 messages_hi:
-    .db >message_main, >message_error, >version_date, >hud, >message_title, >message_createdBy
+    .db >message_main, >message_error, >version_date, >hud, >message_title, >message_createdBy, >message_test2
 
 message_title:
 message_main:
@@ -54,6 +54,10 @@ hud:
     
 testData:
     .db $20, $40, $09, "TEST: ---"
+message_test2:
+    .db $20, $30
+    .db "TEST",0
+    .db $00
     
 hexTable:
     .db $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $41, $42, $43, $44, $45, $46

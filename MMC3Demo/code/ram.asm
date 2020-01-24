@@ -34,3 +34,5 @@ timer2:             .dsb 1
 
 lives:              .dsb 1
 bombs:              .dsb 1
+
+NEA:                .dsb 1

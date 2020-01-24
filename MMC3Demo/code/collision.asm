@@ -42,16 +42,7 @@ checkCollision:
         sta objectType,y
         
         lda #$02
-        jsr BankSwap
-
-        lda #$02
-        sta sound_param_byte_0
-        lda #soundeffect_two
-        sta sound_param_byte_1
-        jsr play_sfx
-        
-        jsr RestoreBank
-
+        jsr playSfx
         
         
         jmp ++

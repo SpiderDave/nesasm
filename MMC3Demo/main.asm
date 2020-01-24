@@ -31,6 +31,7 @@
 include code\ggsound\ggsound.inc                ; GGSound
 include code\nesRegisters.asm                   ; various NES-specific constants
 include code\constants.asm                      ; other constants
+include code\nea.asm                            ;
 include code\banks.asm                          ; Bank asignments
 
 ; Now we are in the fixed bank at $c000
@@ -48,6 +49,8 @@ include code\bounds.asm                         ; handle object bounds
 include code\timers.asm                         ; various timers
 include code\stage.asm
 include code\title.asm
+include code\sound.asm
+
 
 NMI:
     pha                         ; push a,x,y on to the stack
@@ -87,7 +90,7 @@ NMI:
     sta PPUADDR
     sta PPUADDR
     lda #$fa                    ; Set this to give a little bit of padding to the hud text.  Neat!
-    sta PPUSCROLL       
+    sta PPUSCROLL
     sta PPUSCROLL
     
 skipNMIStuff:
@@ -146,7 +149,6 @@ include code\mmc3.asm
 Reset:
     include code\reset.asm
 main:
-
     lda #$01                    ; set mirroring to horizontal
     jsr setMirroring
     
@@ -231,45 +233,16 @@ main:
     
     ;jsr waitframe               ; Crashes without this after removing some code from here
     
-    lda #$02
-    jsr BankSwap
-
-    ;initialize modules
-    lda SOUND_REGION_NTSC
-    tax
-    sta sound_param_byte_0
-    lda #<(song_list)
-    sta sound_param_word_0
-    lda #>(song_list)
-    sta sound_param_word_0+1
-    ifdef sfx_list
-        lda #<(sfx_list)
-        sta sound_param_word_1
-        lda #>(sfx_list)
-        sta sound_param_word_1+1
-    endif
-    lda #<(instrument_list)
-    sta sound_param_word_2
-    lda #>(instrument_list)
-    sta sound_param_word_2+1
-    ifdef dpcm_list
-        lda #<dpcm_list
-        sta sound_param_word_3
-        lda #>dpcm_list
-        sta sound_param_word_3+1
-    endif
-    jsr sound_initialize
+    jsr initSound
     
-    lda #$00
-    sta current_song
-    ;lda #$ff
-    sta musicPlaying
-    
-    jsr RestoreBank
+;    lda #$00
+;    sta current_song
+;    jsr playMusic
     
     lda #$1e                    ; Turn on rendering
     sta PPUMASK
-    jmp title
+    
+    jmp title                   ; Display title screen
     
 mainLoop:
     jsr waitframe
@@ -277,8 +250,7 @@ mainLoop:
     
     lda paused
     beq +
-    lda #$00                    ; Disable Sound
-    sta APUSTATUS
+    jsr pauseMusic
     lda buttonsRelease
     cmp #JOY_SELECT             ; Press select while paused to reset
     bne +
@@ -292,8 +264,7 @@ mainLoop:
     eor #$01
     sta paused
     bne +
-    lda #$1f
-    sta APUSTATUS               ; Enable sound
+    jsr resumeMusic
 +
     lda paused
     bne mainLoop
@@ -399,17 +370,8 @@ mainLoop:
     lda shootCooldown
     bne +
     
-    lda #$02
-    jsr BankSwap
-
     lda #$01
-    sta sound_param_byte_0
-    lda #soundeffect_one
-    sta sound_param_byte_1
-    jsr play_sfx
-    
-    jsr RestoreBank
-    
+    jsr playSfx
     
     lda #$02                    ; laser
     jsr createObject
@@ -480,20 +442,8 @@ buttonNotPressed:
     sta current_song
 +
     inc current_song
-    dec musicPlaying
+    jsr playMusic
 ++
-    lda musicPlaying
-    bne +
-    lda #$02
-    jsr BankSwap
-    
-    lda current_song
-    sta sound_param_byte_0
-    jsr play_song
-    inc musicPlaying
-    
-    jsr RestoreBank
-+
     jmp mainLoop
 
 convertNumber:

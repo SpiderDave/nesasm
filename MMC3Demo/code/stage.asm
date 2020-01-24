@@ -36,18 +36,18 @@ loadLevel:
     dey
     bne --
     ; ----------------------------
-
+    
     ; -- Draw top tiles ----------
-    lda #$23
+    lda #$20
     sta PPUADDR                 ; Write address high byte to PPU
-    lda #$40
+    lda #$80
     sta PPUADDR                 ; Write address low byte to PPU
     
     ldy #$10
 -
     lda #$20                    ; Tile upper left
     sta PPUDATA
-    lda #$21                    ; Tile upper right
+    lda #$21                    ; tile upper right
     sta PPUDATA
     dey
     bne -
@@ -63,16 +63,16 @@ loadLevel:
     ; ----------------------------
     
     ; -- Draw bottom tiles -------
-    lda #$20
+    lda #$23
     sta PPUADDR                 ; Write address high byte to PPU
-    lda #$80
+    lda #$20
     sta PPUADDR                 ; Write address low byte to PPU
     
     ldy #$10
 -
     lda #$20                    ; Tile upper left
     sta PPUDATA
-    lda #$21                    ; tile upper right
+    lda #$21                    ; Tile upper right
     sta PPUDATA
     dey
     bne -
@@ -107,7 +107,7 @@ loadLevel:
     lda #$f0
     sta PPUADDR                 ; Write address low byte to PPU
     
-    lda #$50                    ; Attributes
+    lda #$55                    ; Attributes
     ldy #$08
 -
     sta PPUDATA
@@ -117,7 +117,7 @@ loadLevel:
     
     lda #$03                    ; print hud
     jsr print
-
+    
     bit PPUSTATUS               ; Reset address latch flip-flop
     lda #$00                    ; reset PPU address to avoid glitches.
     sta PPUADDR

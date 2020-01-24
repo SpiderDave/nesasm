@@ -60,4 +60,9 @@ title:
     lda #mode_playing
     sta mode
     jsr loadLevel
+    
+    lda #$00
+    sta current_song
+    jsr playMusic
+    
     jmp mainLoop
