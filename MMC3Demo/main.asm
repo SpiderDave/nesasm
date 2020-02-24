@@ -50,6 +50,7 @@ include code\timers.asm                         ; various timers
 include code\stage.asm
 include code\title.asm
 include code\sound.asm
+include code\sine.asm
 
 
 NMI:
@@ -251,13 +252,13 @@ mainLoop:
     lda paused
     beq +
     jsr pauseMusic
-    lda buttonsRelease
+    lda buttonsPress
     cmp #JOY_SELECT             ; Press select while paused to reset
     bne +
     jmp Reset
 +
     
-    lda buttonsRelease
+    lda buttonsPress
     cmp #JOY_START              ; Pause
     bne +
     lda paused
@@ -399,10 +400,26 @@ mainLoop:
     jmp ++
 +
 
-;    lda buttonsRelease
-;    cmp #$20                    ;select
-;    bne +
-    lda timer1
+;    angle = 45
+;    angle2 = 45+90
+    angle = $01
+    angle2 = #angle+$40
+    lda buttonsRelease
+    cmp #$20                    ;select
+    bne ++
+    ;lda timer1
+    
+    lda #angle2
+    jsr sin_A
+    
+    sta objectVelocityX
+    
+    lda #angle
+    jsr cos_A
+    
+    sta objectVelocityY
+    
+    lda #angle * 360/256
     jsr convertNumber
     
     ldx buffer1Offset
@@ -431,8 +448,7 @@ mainLoop:
     inx
     stx buffer1Offset
 ++
-buttonNotPressed:
-    lda buttonsRelease
+    lda buttonsPress
     cmp #JOY_SELECT
     bne ++
     lda current_song
@@ -517,7 +533,7 @@ waitloop:
 
 ; with ggsound, DPCM data MUST be at $C000 or later
 .align 64
-include code\ggsound\track_dpcm.inc
+;include code\ggsound\track_dpcm.inc
 include code\ggsound\shmup_dpcm.asm
 
 

@@ -43,3 +43,4 @@ CHR3:               .dsb 1
 CHR4:               .dsb 1
 CHR5:               .dsb 1
 
+THE:                .dsb 2

@@ -51,7 +51,7 @@ rts
 title:
     jsr readJoy
 
-    lda buttonsRelease
+    lda buttonsPress
     cmp #$10
     bne title
     lda #$04
