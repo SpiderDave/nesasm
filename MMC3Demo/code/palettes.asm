@@ -1,50 +1,20 @@
-; Load a palette given the palette number (A register) and slot (Y register).
-loadPalette:
-    tax
-    
-    lda #$3F
-    sta PPUADDR
-    tya
-    asl
-    asl
-    sta PPUADDR
-    
-    lda palettes_lo, x
-    sta temp16
-    lda palettes_hi, x
-    sta temp16+1
-    
-    ldy #$00
-    ldx #$04
-loadPalette_loop:
-    lda (temp16),y
-    sta PPUDATA
-    iny
-    dex
-    bne loadPalette_loop
-    
-    rts
+Palettes_low:
+    .db <Palette00, <Palette01, <Palette02, <Palette03
+    .db <Palette04, <Palette05, <Palette06, <Palette07
+    .db <Palette08, <Palette09
 
-palettes_lo:
-    .db <palette00, <palette01, <palette02, <palette03, <palette04, <palette05, <palette06, <palette07, <palette08, <palette09
-palettes_hi:
-    .db >palette00, >palette01, >palette02, >palette03, >palette04, >palette05, >palette06, >palette07, >palette08, >palette09
-palette00:
-    .db $0F, $21, $11, $01
-palette01:
-    .db $0F, $26, $16, $06
-palette02:
-    .db $0F, $33, $23, $03
-palette03:
-    .db $0F, $26, $16, $06
-palette04:
-    .db $0F, $27, $17, $07
-palette05:
-    .db $0F, $28, $18, $08
-palette06:
-palette07:
-palette08:
-palette09:
-    .db $0F, $20, $10, $00
+Palettes_high:
+    .db >Palette00, >Palette01, >Palette02, >Palette03
+    .db >Palette04, >Palette05, >Palette06, >Palette07
+    .db >Palette08, >Palette09
 
-
+Palette00: .db $0f, $21, $11, $01
+Palette01: .db $0f, $26, $16, $06
+Palette02: .db $0f, $33, $23, $03
+Palette03: .db $0f, $26, $16, $06
+Palette04: .db $0f, $27, $17, $07
+Palette05: .db $0f, $28, $18, $08
+Palette06: .db $0f, $20, $10, $00
+Palette07: .db $0f, $20, $10, $00
+Palette08: .db $0f, $20, $10, $00
+Palette09: .db $0f, $20, $10, $00

@@ -38,6 +38,7 @@ include code\banks.asm                          ; Bank asignments
 include code\joypad.asm
 include code\printer.asm                        ; Screen print routine
 include code\messages.asm
+include code\paletteLoader.asm
 include code\palettes.asm
 include code\sprites.asm                        ; Sprite-related routines
 include code\rng.asm                            ; Random number generator
@@ -545,6 +546,5 @@ include code\ggsound\shmup_dpcm.asm
 
 .incbin data/chr00.chr
 .incbin data/chr01.chr
-
-
-
+.incbin data/chr02.chr
+.incbin data/chr03.chr

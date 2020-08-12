@@ -1,5 +1,5 @@
 ; Init CPU
-    sei
+    sei                 ; disable IRQ interrupt
     cld                 ; clear decimal mode
     .ifdef MMC3Setup
         jsr MMC3Setup
