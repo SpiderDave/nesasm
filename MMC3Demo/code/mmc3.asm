@@ -1,3 +1,4 @@
+MapperSetup:
 MMC3Setup:
     lda #$00
     sta $8000

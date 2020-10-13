@@ -1,9 +1,9 @@
 ; Init CPU
     sei                 ; disable IRQ interrupt
     cld                 ; clear decimal mode
-    .ifdef MMC3Setup
-        jsr MMC3Setup
-    .endif
+    ifdef MapperSetup
+        jsr MapperSetup
+    endif
     ldx #$c0
     stx JOY2
     ldx #$00
