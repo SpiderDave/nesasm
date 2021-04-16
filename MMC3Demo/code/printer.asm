@@ -1,8 +1,8 @@
 print:
     tay
-    lda (messages_lo),y
+    lda messages_lo,y
     sta temp16
-    lda (messages_hi),y
+    lda messages_hi,y
     sta temp16+1
     
     ldy #$ff
